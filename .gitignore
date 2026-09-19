@@ -1,0 +1,35 @@
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea
+
+# gradle
+build
+.gradle
+
+# other
+eclipse
+run
+run-data
+
+# Workspace-local Gradle home (used when the default one is not writable)
+.gradle-home
+
+# Ready-to-install jars (this mod + its dependencies) for manual testing
+dist
+
+# Files from Forge MDK
+forge*changelog.txt
+
+# Transient build/test logs produced by the dev self-tests
+*.log

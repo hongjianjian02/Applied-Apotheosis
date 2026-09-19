@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "applied_apotheosis:block/me_salvager_top",
+    "east": "applied_apotheosis:block/me_salvager_side",
+    "north": "applied_apotheosis:block/me_salvager_front",
+    "particle": "applied_apotheosis:block/me_salvager_side",
+    "south": "applied_apotheosis:block/me_salvager_side",
+    "up": "applied_apotheosis:block/me_salvager_top",
+    "west": "applied_apotheosis:block/me_salvager_side"
+  }
+}

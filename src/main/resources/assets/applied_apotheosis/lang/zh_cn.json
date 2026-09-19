@@ -1,0 +1,20 @@
+{
+  "itemGroup.applied_apotheosis": "应用神化",
+  "block.applied_apotheosis.me_salvager": "ME 分解器",
+  "item.applied_apotheosis.salvage_card": "分解卡",
+  "tooltip.applied_apotheosis.salvage_card": "ME 分解器必需；每张卡让机器每 tick 多处理 1 件装备",
+
+  "container.applied_apotheosis.me_salvager": "ME 分解器",
+  "gui.applied_apotheosis.input": "待分解",
+  "gui.applied_apotheosis.filter": "过滤列表",
+  "gui.applied_apotheosis.upgrades": "升级",
+  "gui.applied_apotheosis.filter_mode": "过滤模式：%s",
+  "gui.applied_apotheosis.filter.disabled": "不过滤",
+  "gui.applied_apotheosis.filter.whitelist": "白名单",
+  "gui.applied_apotheosis.filter.blacklist": "黑名单",
+  "gui.applied_apotheosis.filter.disabled.tooltip": "所有神话词缀装备都会被分解",
+  "gui.applied_apotheosis.filter.whitelist.tooltip": "只分解下方列表中列出的物品",
+  "gui.applied_apotheosis.filter.blacklist.tooltip": "下方列表中列出的物品永不分解",
+  "gui.applied_apotheosis.affix_only": "只接受神化词缀装备（不限稀有度）",
+  "gui.applied_apotheosis.no_card": "未安装分解卡"
+}

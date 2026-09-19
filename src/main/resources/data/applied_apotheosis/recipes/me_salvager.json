@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "ae2:calculation_processor"
+    },
+    "E": {
+      "item": "ae2:engineering_processor"
+    },
+    "G": {
+      "item": "ae2:quartz_vibrant_glass"
+    },
+    "L": {
+      "item": "ae2:logic_processor"
+    },
+    "T": {
+      "item": "apotheosis:salvaging_table"
+    }
+  },
+  "pattern": [
+    "GCG",
+    "ETE",
+    "GLG"
+  ],
+  "result": {
+    "item": "applied_apotheosis:me_salvager"
+  },
+  "show_notification": true
+}

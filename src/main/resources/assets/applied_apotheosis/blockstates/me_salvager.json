@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "applied_apotheosis:block/me_salvager"
+    },
+    "active=true": {
+      "model": "applied_apotheosis:block/me_salvager_active"
+    }
+  }
+}

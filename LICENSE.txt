@@ -1,0 +1,36 @@
+Applied Apotheosis - All Rights Reserved
+========================================
+
+Copyright (c) 2026 jianjian_. All rights reserved.
+
+This mod ("Applied Apotheosis", mod id: applied_apotheosis) and all of its source
+code, assets and data files are the property of the author.
+
+You may NOT:
+  * redistribute this mod or modified versions of it;
+  * publish it (or a modified version) on any website, launcher, store or
+    modpack listing without written permission;
+  * copy its code or assets into your own project.
+
+You MAY:
+  * include this mod in a modpack, as long as it is unmodified and obtained
+    from the official release page;
+  * run it on your own single player worlds and servers.
+
+
+Third-party notices
+-------------------
+
+  * The Gradle build scaffolding (gradlew, gradlew.bat, gradle/wrapper/**,
+    parts of build.gradle, gradle.properties and settings.gradle) originates
+    from the Minecraft Forge MDK and remains under LGPL 2.1
+    (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt).
+
+  * This mod depends on, but does not bundle, the following projects. Their
+    own licenses apply to them:
+      - Applied Energistics 2 (LGPL 3.0)
+      - GuideME
+      - Apotheosis, Placebo, ApothicAttributes (MIT)
+
+  * "Minecraft" is a trademark of Mojang Synergies AB. This mod is not
+    affiliated with or endorsed by Mojang or Microsoft.

@@ -1,0 +1,68 @@
+{
+  "includes": ["common/common.json", "common/player_inventory.json"],
+  "background": {
+    "texture": "applied_apotheosis:textures/guis/me_salvager.png",
+    "srcRect": [0, 0, 176, 220]
+  },
+  "slots": {
+    "CONFIG": {
+      "left": 8,
+      "top": 34,
+      "grid": "BREAK_AFTER_9COLS"
+    },
+    "MACHINE_INPUT": {
+      "left": 8,
+      "top": 72,
+      "grid": "BREAK_AFTER_9COLS"
+    },
+    "UPGRADE": {
+      "left": 8,
+      "top": 108,
+      "grid": "HORIZONTAL"
+    }
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "container.applied_apotheosis.me_salvager"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    },
+    "filterLabel": {
+      "text": {
+        "translate": "gui.applied_apotheosis.filter"
+      },
+      "position": {
+        "left": 8,
+        "top": 20
+      }
+    },
+    "inputLabel": {
+      "text": {
+        "translate": "gui.applied_apotheosis.input"
+      },
+      "position": {
+        "left": 8,
+        "top": 58
+      }
+    },
+    "upgradeLabel": {
+      "text": {
+        "translate": "gui.applied_apotheosis.upgrades"
+      },
+      "position": {
+        "left": 8,
+        "top": 94
+      }
+    }
+  },
+  "widgets": {
+    "filterMode": {
+      "left": 152,
+      "top": 16
+    }
+  }
+}

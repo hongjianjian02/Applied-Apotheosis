@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "item": "ae2:advanced_card"
+    },
+    "D": {
+      "item": "apotheosis:gem_dust"
+    },
+    "L": {
+      "item": "ae2:logic_processor"
+    }
+  },
+  "pattern": [
+    " D ",
+    "DAD",
+    " L "
+  ],
+  "result": {
+    "item": "applied_apotheosis:salvage_card"
+  },
+  "show_notification": true
+}
