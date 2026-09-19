@@ -6,7 +6,7 @@
 
 - mod id：`applied_apotheosis`
 - 作者：jianjian_
-- 许可：All Rights Reserved（见 [LICENSE.txt](LICENSE.txt)）
+- 许可：MIT（见 [LICENSE.txt](LICENSE.txt)）
 
 ## 依赖（缺一不可）
 

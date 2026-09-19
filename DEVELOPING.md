@@ -111,3 +111,16 @@ src/main/resources/
 - 方块没有朝向属性，正面固定为北面。
 - 稀有度门槛是写死的常量，不能在游戏里调。
 - 过滤列表只按物品种类匹配，同一物品种类的不同词缀无法区分。
+
+## 许可与第三方声明
+
+本模组以 **MIT** 发布，全文见 [LICENSE.txt](LICENSE.txt)。
+
+需要保留的第三方声明：
+
+- Gradle 构建脚手架（`gradlew`、`gradlew.bat`、`gradle/wrapper/**`，以及 `build.gradle` /
+  `gradle.properties` / `settings.gradle` 的模板部分）来自 Minecraft Forge MDK，
+  仍适用 **LGPL-2.1**（https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt）。
+- 本项目**依赖但不打包**下列模组，它们各自的许可照旧适用：
+  Applied Energistics 2（LGPL 3.0）、GuideME、Apotheosis / Placebo / ApothicAttributes（MIT）。
+- "Minecraft" 是 Mojang Synergies AB 的商标；本项目与 Mojang / Microsoft 无关联、未获其背书。
