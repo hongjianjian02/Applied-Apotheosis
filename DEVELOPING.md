@@ -112,6 +112,13 @@ src/main/resources/
 - 稀有度门槛是写死的常量，不能在游戏里调。
 - 过滤列表只按物品种类匹配，同一物品种类的不同词缀无法区分。
 
+## 踩过的坑
+
+- **不要往 `gradle.properties` 里写非 ASCII 字符**。Gradle 用 ISO-8859-1 读这个文件，
+  中文会变成乱码写进 `mods.toml`（游戏 Mods 列表里就会显示 `?????¨??????`）。
+  中文名放在 `README.md`、语言文件 `lang/zh_cn.json` 和 GUI 文本里即可（那些都是按 UTF-8 读的）。
+- `gradle.properties` 的改动会经 `processResources` 的 `expand` 注入 `mods.toml`，所以改完要重新 `build` 才会进 jar。
+
 ## 许可与第三方声明
 
 本模组以 **MIT** 发布，全文见 [LICENSE.txt](LICENSE.txt)。
