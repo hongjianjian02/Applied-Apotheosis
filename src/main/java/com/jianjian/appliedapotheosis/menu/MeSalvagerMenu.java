@@ -36,14 +36,14 @@ public class MeSalvagerMenu extends AEBaseMenu {
         var input = host.getInternalInventory();
         for (int i = 0; i < MeSalvagerBlockEntity.INPUT_SLOTS; i++) {
             var slot = new AppEngSlot(input, i);
-            slot.setEmptyTooltip(MeSalvagerMenu::affixGearOnlyTooltip);
+            slot.setEmptyTooltip(MeSalvagerMenu::acceptedItemsTooltip);
             addSlot(slot, SlotSemantics.MACHINE_INPUT);
         }
 
         var filter = host.getFilterInventory();
         for (int i = 0; i < MeSalvagerBlockEntity.FILTER_SLOTS; i++) {
             var slot = new AppEngSlot(filter, i);
-            slot.setEmptyTooltip(MeSalvagerMenu::affixGearOnlyTooltip);
+            slot.setEmptyTooltip(MeSalvagerMenu::acceptedItemsTooltip);
             addSlot(slot, SlotSemantics.CONFIG);
         }
 
@@ -62,7 +62,7 @@ public class MeSalvagerMenu extends AEBaseMenu {
     }
 
     /** Tooltip shown on the empty input/filter slots, explaining what the machine accepts. */
-    private static List<Component> affixGearOnlyTooltip() {
+    private static List<Component> acceptedItemsTooltip() {
         return List.of(Component.translatable("gui.applied_apotheosis.affix_only"));
     }
 

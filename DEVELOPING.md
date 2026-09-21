@@ -20,8 +20,8 @@
 ### 服务端自检：`gradlew runServer -Pselftest`
 
 自动在服务端世界搭一个微型 ME 网络（ME 分解器 + 创造能源元件 + ME 箱子 + 1k 元件），
-用 Apotheosis 的 API 现场随机生成各稀有度装备，验证注册、卡牌并行度、稀有度门槛、黑白名单、
-拆解与入网，然后自动关服：
+用 Apotheosis 的 API 现场随机生成各稀有度装备与宝石，验证注册、卡牌并行度、稀有度门槛、
+宝石接收、黑白名单、拆解与入网（材料与宝石粉都要进网络），然后自动关服：
 
 ```
 [selftest] parallelism with 1 salvage card  = 1 item(s) per tick (expect 1)
@@ -29,12 +29,17 @@
 [selftest] lowest-rarity gear (common) into input -> leftover = 0 (0 = correctly accepted)
 [selftest] common gear into filter list  -> valid = true    (true = correctly accepted)
 [selftest] epic gear into input          -> leftover = 0    (0 = correctly accepted)
-[selftest] mythic gem = 1 gem | rarity = apotheosis:mythic | hasAffixes = false | accepted = false
+[selftest] mythic gem = 1 gem | rarity = apotheosis:mythic | hasAffixes = false | isApotheosisLoot = true | accepted = true
+[selftest] mythic gem into input       -> leftover = 0 (0 = correctly accepted)
+[selftest] mythic gem into filter list -> valid = true (true = correctly accepted)
+[selftest] Apotheosis salvaging produced from the gem: [3 gem_dust] (expect gem dust)
 [selftest] mythic rarity but empty affix list -> hasAffixes = false | accepted = false
 [selftest] BLACKLIST + listed sword -> sword leftover = 1 (1 = correctly blocked)
 [selftest] WHITELIST + unlisted chestplate -> leftover = 1 (1 = correctly blocked)
-[selftest] gear consumed at tick 21 (machine salvaged it)
-[selftest] tick 40: node ready=true active=true powered=true | input=0 air | network=[3 x apotheosis:mythic_material]
+[selftest] input buffer now holds 2 item(s) (expect 2: one affix item + one gem)
+[selftest] everything consumed at tick 21 (machine salvaged the queued loot)
+[selftest] ME network storage now holds = [2 x apotheosis:mythic_material, 3 x apotheosis:gem_dust]
+[selftest] gem dust from the gem reached the network = true (expect true)
 ```
 
 ### 客户端自检：`gradlew runClient -Pclientselftest`
@@ -99,7 +104,8 @@ src/main/resources/
 | 想改什么 | 位置 |
 |---|---|
 | 稀有度门槛（现在 = 全部收） | `MeSalvagerBlockEntity.MINIMUM_RARITY`（`apotheosis:common`；改成 `mythic` 即只收神话及以上） |
-| 接受条件（是否要求带词缀） | `MeSalvagerBlockEntity.hasRequiredRarity` / `isAccepted` |
+| 接受什么（词缀装备 / 宝石） | `MeSalvagerBlockEntity.isApotheosisLoot`（词缀列表 or `GemItem.getGem(stack).isBound()`）与 `hasRequiredRarity` / `isAccepted` |
+| 哪些物品会被跳过 | `findSalvageableSlot()`：稀有度合格但神化没有拆解配方的（远古装备）直接跳过，不堵住队列 |
 | 输入 / 过滤 / 升级槽数量 | `MeSalvagerBlockEntity.INPUT_SLOTS` / `FILTER_SLOTS` / `UPGRADE_SLOTS`（**注意**：改槽数还要同步改 `assets/ae2/screens/me_salvager.json` 里的槽位坐标与贴图 `textures/guis/me_salvager.png`） |
 | 耗电与处理速度 | `POWER_PER_OPERATION`、`IDLE_POWER`、`BASE_TICK_RATE`，以及 `getOperationsPerCycle()` / `getTickingRequest()` |
 | 卡牌上限 | `ModBlocks.MAX_SALVAGE_CARDS` / `MAX_SPEED_CARDS` |
@@ -111,6 +117,7 @@ src/main/resources/
 - 方块没有朝向属性，正面固定为北面。
 - 稀有度门槛是写死的常量，不能在游戏里调。
 - 过滤列表只按物品种类匹配，同一物品种类的不同词缀无法区分。
+- 宝石只看稀有度，纯度（purity）不影响宝石粉数量；这条跟着神化自己的配方走。
 
 ## 踩过的坑
 

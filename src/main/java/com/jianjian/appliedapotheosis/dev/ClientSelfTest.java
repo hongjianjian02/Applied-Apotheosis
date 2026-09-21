@@ -109,7 +109,7 @@ public final class ClientSelfTest {
                 machine.getUpgrades().addItems(new ItemStack(ModItems.SALVAGE_CARD.get()));
 
                 // Fill the filter list (blacklist entries) and the input buffer so the GUI has content.
-                // Only mythic+ equipment may go in either place, so everything here is rolled at mythic.
+                // Anything the machine accepts may go in either place; these are rolled at mythic.
                 var mythic = RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get();
                 var sword = LootController.createLootItem(new ItemStack(Items.DIAMOND_SWORD), mythic,
                         level.getRandom());

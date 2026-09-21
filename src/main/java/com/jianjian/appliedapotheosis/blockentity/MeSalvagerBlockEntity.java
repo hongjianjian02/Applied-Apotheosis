@@ -33,6 +33,7 @@ import dev.shadowsoffire.apotheosis.Apotheosis;
 import dev.shadowsoffire.apotheosis.adventure.affix.AffixHelper;
 import dev.shadowsoffire.apotheosis.adventure.affix.salvaging.SalvagingMenu;
 import dev.shadowsoffire.apotheosis.adventure.loot.RarityRegistry;
+import dev.shadowsoffire.apotheosis.adventure.socket.gem.GemItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -49,8 +50,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * The ME Salvager block entity.
  * <p>
  * Items pushed into the input buffer (by pipes, an ME interface, or by right-clicking the block with
- * an Apotheosis affix item) are salvaged using Apotheosis' own salvaging recipes. The results are
- * buffered internally and then inserted into the ME network.
+ * an Apotheosis affix item or a gem) are salvaged using Apotheosis' own salvaging recipes: affix
+ * equipment turns into the material of its rarity, gems turn into gem dust. The results are buffered
+ * internally and then inserted into the ME network.
  * <p>
  * At least one {@code applied_apotheosis:salvage_card} must be installed for the machine to do anything;
  * every further card lets it process one more item per tick, while AE2 speed cards shorten the tick
@@ -97,7 +99,7 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
 
         this.input = new AppEngInternalInventory(this, INPUT_SLOTS, 64, new SalvageableItemFilter());
         this.output = new AppEngInternalInventory(this, OUTPUT_SLOTS);
-        this.filter = new AppEngInternalInventory(this, FILTER_SLOTS, 1, new MythicOnlyFilter());
+        this.filter = new AppEngInternalInventory(this, FILTER_SLOTS, 1, new SalvageableOnlyFilter());
         this.exposedInput = new FilteredInternalInventory(this.input, new SalvageableItemFilter());
 
         this.getMainNode()
@@ -204,14 +206,11 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
     }
 
     /**
-     * Whether the item is Apotheosis equipment of at least {@link #MINIMUM_RARITY} rarity.
-     * Everything below that is rejected by the input buffer and by the filter list alike.
-     * <p>
-     * Note that this requires an actual affix list, so gems (which only carry a rarity) are not
-     * accepted - they are meant to be salvaged at Apotheosis' own salvaging table.
+     * Whether the item is Apotheosis loot of at least {@link #MINIMUM_RARITY} rarity - either affix
+     * equipment or a gem. Everything else is rejected by the input buffer and by the filter list alike.
      */
     public static boolean hasRequiredRarity(ItemStack stack) {
-        if (!AffixHelper.hasAffixes(stack)) {
+        if (!isApotheosisLoot(stack)) {
             return false;
         }
 
@@ -224,7 +223,19 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
         return minimum.isBound() && rarity.get().isAtLeast(minimum.get());
     }
 
-    /** Everything the machine accepts: mythic+ Apotheosis gear that also passes the filter mode. */
+    /**
+     * Whether the stack is something Apotheosis' salvaging recipes handle at all.
+     * <p>
+     * Affix equipment carries an affix list; gems carry no affix list but do store a rarity in the
+     * same {@code affix_data.rarity} tag (this is exactly what Apotheosis' own {@code GemIngredient}
+     * matches on), and salvaging them yields gem dust. Everything else - plain items, and loot whose
+     * affix list was emptied - is refused.
+     */
+    public static boolean isApotheosisLoot(ItemStack stack) {
+        return AffixHelper.hasAffixes(stack) || GemItem.getGem(stack).isBound();
+    }
+
+    /** Everything the machine accepts: Apotheosis loot of the required rarity that passes the filter mode. */
     public boolean isAccepted(ItemStack stack) {
         return hasRequiredRarity(stack) && isAllowedByFilter(stack);
     }
@@ -410,12 +421,25 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
         return this.upgrades.getInstalledUpgrades(ModItems.SALVAGE_CARD.get());
     }
 
+    /**
+     * First input slot holding something the machine can actually salvage: accepted by the rarity
+     * gate and the filter mode, and matched by one of Apotheosis' salvaging recipes. Loot that passes
+     * the gate but has no recipe (ancient gear, for instance - Apotheosis ships no
+     * {@code ancient_material} recipe) is skipped rather than stalling everything behind it.
+     */
     private int findSalvageableSlot() {
+        if (this.level == null) {
+            return -1;
+        }
         for (int slot = 0; slot < this.input.size(); slot++) {
             var stack = this.input.getStackInSlot(slot);
-            if (isAccepted(stack)) {
-                return slot;
+            if (!isAccepted(stack)) {
+                continue;
             }
+            if (SalvagingMenu.findMatch(this.level, stack) == null) {
+                continue;
+            }
+            return slot;
         }
         return -1;
     }
@@ -434,7 +458,7 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
         var single = this.input.getStackInSlot(slot).copyWithCount(1);
         var results = SalvagingMenu.salvageItem(this.level, single);
         if (results.isEmpty()) {
-            // No salvaging recipe for this item - leave it alone rather than destroying it.
+            // Only reachable if the recipe manager was reloaded between the probe and here.
             return false;
         }
 
@@ -499,7 +523,8 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
     }
 
     /**
-     * Only mythic+ Apotheosis equipment that the blacklist/whitelist allows may enter the machine.
+     * Only Apotheosis loot (affix equipment and gems) that the blacklist/whitelist allows may enter
+     * the machine.
      */
     private class SalvageableItemFilter implements IAEItemFilter {
         @Override
@@ -514,10 +539,10 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
     }
 
     /**
-     * The filter list only accepts mythic+ Apotheosis equipment, so entries always describe gear the
-     * machine is actually able to salvage.
+     * The filter list only accepts Apotheosis loot, so entries always describe something the machine
+     * is actually able to salvage.
      */
-    private static class MythicOnlyFilter implements IAEItemFilter {
+    private static class SalvageableOnlyFilter implements IAEItemFilter {
         @Override
         public boolean allowExtract(InternalInventory inv, int slot, int amount) {
             return true;

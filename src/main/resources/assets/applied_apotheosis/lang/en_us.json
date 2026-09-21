@@ -12,9 +12,9 @@
   "gui.applied_apotheosis.filter.disabled": "Disabled",
   "gui.applied_apotheosis.filter.whitelist": "Whitelist",
   "gui.applied_apotheosis.filter.blacklist": "Blacklist",
-  "gui.applied_apotheosis.filter.disabled.tooltip": "Every Apotheosis affix item is salvaged",
+  "gui.applied_apotheosis.filter.disabled.tooltip": "Every Apotheosis affix item and gem is salvaged",
   "gui.applied_apotheosis.filter.whitelist.tooltip": "Only items listed below are salvaged",
   "gui.applied_apotheosis.filter.blacklist.tooltip": "Listed items are never salvaged",
-  "gui.applied_apotheosis.affix_only": "Accepts Apotheosis affix equipment only (any rarity)",
+  "gui.applied_apotheosis.affix_only": "Accepts Apotheosis affix equipment and gems",
   "gui.applied_apotheosis.no_card": "No salvage card installed"
 }

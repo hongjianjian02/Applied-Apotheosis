@@ -7,10 +7,12 @@ import com.jianjian.appliedapotheosis.registry.ModBlockEntities;
 import com.jianjian.appliedapotheosis.registry.ModBlocks;
 import com.jianjian.appliedapotheosis.registry.ModItems;
 
+import appeng.api.config.Actionable;
 import appeng.api.upgrades.Upgrades;
 import appeng.blockentity.storage.ChestBlockEntity;
 import appeng.core.definitions.AEBlocks;
 import appeng.core.definitions.AEItems;
+import appeng.me.helpers.MachineSource;
 import dev.shadowsoffire.apotheosis.Apotheosis;
 import dev.shadowsoffire.apotheosis.adventure.affix.AffixHelper;
 import dev.shadowsoffire.apotheosis.adventure.affix.salvaging.SalvagingMenu;
@@ -30,8 +32,9 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 /**
  * Developer self-test. Enabled only with {@code -Dapplied_apotheosis.selftest=true}: it builds a small
- * ME network in a real server world, feeds the ME Salvager a genuine Apotheosis affix item and
- * verifies that the salvaging results end up in ME network storage. The server then shuts down.
+ * ME network in a real server world, feeds the ME Salvager genuine Apotheosis loot (an affix item and
+ * a gem) and verifies that the salvaging results - the rarity material and the gem dust - end up in ME
+ * network storage. The server then shuts down.
  */
 public final class SelfTest {
     public static final String ENABLED_PROPERTY = "applied_apotheosis.selftest";
@@ -43,6 +46,7 @@ public final class SelfTest {
     private static MeSalvagerBlockEntity salvager;
     private static ChestBlockEntity chest;
     private static ItemStack rolledGear = ItemStack.EMPTY;
+    private static ItemStack testGem = ItemStack.EMPTY;
     private static int ticks;
     private static int consumedAt = -1;
     private static boolean finished;
@@ -102,6 +106,11 @@ public final class SelfTest {
             throw new IllegalStateException("ME Salvager block entity was not created");
         }
         salvager = machine;
+        // The test world is reused between runs, so start from a clean machine and empty storage.
+        salvager.getUpgrades().clear();
+        salvager.getInternalInventory().clear();
+        salvager.getFilterInventory().clear();
+        salvager.setFilterMode(FilterMode.DISABLED);
 
         chest = (ChestBlockEntity) level.getBlockEntity(chestPos);
         if (chest == null) {
@@ -147,16 +156,24 @@ public final class SelfTest {
                 salvager.insertForSalvaging(rolledGear.copy()).getCount());
         salvager.getInternalInventory().clear();
 
-        // --- what exactly counts as mythic equipment? gems have a rarity but no affix list ---
+        // --- gems count as loot too: no affix list, but a rarity in the same affix_data tag, and
+        //     Apotheosis salvages them into gem dust instead of a material ---
         var gemType = GemRegistry.INSTANCE.getValues().stream().findFirst().orElse(null);
         if (gemType == null) {
             log("no gems registered - skipping the gem check");
         } else {
-            var mythicGem = GemRegistry.createGemStack(gemType,
-                    RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get());
-            log("mythic gem = {} | rarity = {} | hasAffixes = {} | accepted by the machine = {}",
-                    mythicGem, AffixHelper.getRarity(mythicGem).getId(), AffixHelper.hasAffixes(mythicGem),
-                    MeSalvagerBlockEntity.hasRequiredRarity(mythicGem));
+            testGem = GemRegistry.createGemStack(gemType, mythic);
+            log("mythic gem = {} | rarity = {} | hasAffixes = {} | isApotheosisLoot = {} | accepted = {}",
+                    testGem, AffixHelper.getRarity(testGem).getId(), AffixHelper.hasAffixes(testGem),
+                    MeSalvagerBlockEntity.isApotheosisLoot(testGem),
+                    MeSalvagerBlockEntity.hasRequiredRarity(testGem));
+            log("mythic gem into input -> leftover = {} (0 = correctly accepted)",
+                    salvager.insertForSalvaging(testGem.copy()).getCount());
+            log("mythic gem into filter list -> valid = {} (true = correctly accepted)",
+                    salvager.getFilterInventory().isItemValid(0, testGem.copy()));
+            salvager.getInternalInventory().clear();
+            log("Apotheosis salvaging produced from the gem: {} (expect gem dust)",
+                    SalvagingMenu.salvageItem(level, testGem.copy()));
         }
 
         // A mythic item whose affix list was emptied must not sneak in either.
@@ -190,9 +207,29 @@ public final class SelfTest {
 
         salvager.getInternalInventory().clear();
         salvager.setFilterMode(FilterMode.DISABLED);
+    }
 
+    /** Feeds the queued loot - one affix item and one gem - and reports what the buffer took. */
+    private static void feedLoot() {
         var gearLeftover = salvager.insertForSalvaging(rolledGear.copy());
         log("affix gear accepted? leftover = {} (0 = yes)", gearLeftover.getCount());
+
+        if (!testGem.isEmpty()) {
+            var gemLeftover = salvager.insertForSalvaging(testGem.copy());
+            log("gem accepted? leftover = {} (0 = yes)", gemLeftover.getCount());
+        }
+        log("input buffer now holds {} item(s) (expect 2: one affix item + one gem)", inputCount());
+    }
+
+    /** Number of non-empty slots in the machine's input buffer. */
+    private static int inputCount() {
+        int count = 0;
+        for (int slot = 0; slot < salvager.getInternalInventory().size(); slot++) {
+            if (!salvager.getInternalInventory().getStackInSlot(slot).isEmpty()) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private static void onServerTick(TickEvent.ServerTickEvent event) {
@@ -201,16 +238,22 @@ public final class SelfTest {
         }
         ticks++;
 
-        if (salvager.getInternalInventory().getStackInSlot(0).isEmpty() && consumedAt < 0) {
+        if (ticks == 1) {
+            // The storage cell only comes online once the grid has formed, so wipe it on the first
+            // tick and feed the loot right after: the totals below are then exactly this run's.
+            clearNetworkStorage();
+            feedLoot();
+        }
+
+        if (inputCount() == 0 && consumedAt < 0) {
             consumedAt = ticks;
-            log("gear consumed at tick {} (machine salvaged it)", ticks);
+            log("everything consumed at tick {} (machine salvaged the queued loot)", ticks);
         }
 
         if (ticks % LOG_EVERY == 0) {
-            log("tick {}: node ready={} active={} powered={} | input={} | network=[{}]",
+            log("tick {}: node ready={} active={} powered={} | input={} item(s) | network=[{}]",
                     ticks, salvager.getMainNode().isReady(), salvager.getMainNode().isActive(),
-                    salvager.getMainNode().isPowered(),
-                    salvager.getInternalInventory().getStackInSlot(0),
+                    salvager.getMainNode().isPowered(), inputCount(),
                     networkContents());
         }
 
@@ -222,21 +265,34 @@ public final class SelfTest {
         finished = true;
 
         try {
-            log("finished after {} ticks (gear consumed at tick {})", ticks, consumedAt);
+            log("finished after {} ticks (input emptied at tick {})", ticks, consumedAt);
             log("machine node: ready = {} active = {} powered = {}",
                     salvager.getMainNode().isReady(), salvager.getMainNode().isActive(),
                     salvager.getMainNode().isPowered());
 
-            var input = salvager.getInternalInventory().getStackInSlot(0);
-            log("machine input slot now = {} (empty means the gear was consumed)", input);
-            log("ME network storage now holds = [{}]", networkContents());
+            log("machine input slots now hold {} item(s) (0 means everything was consumed)", inputCount());
+            var contents = networkContents();
+            log("ME network storage now holds = [{}]", contents);
 
             var mythic = RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get();
-            log("expected material = {}", new ItemStack(mythic.getMaterial()));
+            log("expected material from the affix item = {}", new ItemStack(mythic.getMaterial()));
+            log("gem dust from the gem reached the network = {} (expect true)", contents.contains("gem_dust"));
         } catch (Throwable t) {
             AppliedApotheosis.LOGGER.error("[selftest] verification FAILED", t);
         } finally {
             level.getServer().halt(false);
+        }
+    }
+
+    /** Empties the storage cell, so every run reports exactly the loot it fed in. */
+    private static void clearNetworkStorage() {
+        var storage = chest.getCellInventory(0);
+        if (storage == null) {
+            return;
+        }
+        var source = new MachineSource(chest);
+        for (var entry : storage.getAvailableStacks()) {
+            storage.extract(entry.getKey(), entry.getLongValue(), Actionable.MODULATE, source);
         }
     }
 
