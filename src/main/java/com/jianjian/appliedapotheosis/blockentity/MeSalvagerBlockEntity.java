@@ -64,7 +64,11 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
 
     public static final int INPUT_SLOTS = 9;
     public static final int OUTPUT_SLOTS = 9;
-    public static final int UPGRADE_SLOTS = 3;
+    /**
+     * Slots in AE2's upgrade panel. Six, so the intended maximum build - three salvage cards plus
+     * three speed cards (see {@code ModBlocks.MAX_SALVAGE_CARDS} / {@code MAX_SPEED_CARDS}) - fits.
+     */
+    public static final int UPGRADE_SLOTS = 6;
     /** Slots holding the blacklist/whitelist entries. */
     public static final int FILTER_SLOTS = 9;
 

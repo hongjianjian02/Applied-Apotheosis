@@ -77,9 +77,10 @@ public final class SelfTest {
         log("registered item applied_apotheosis:salvage_card = {}",
                 ForgeRegistries.ITEMS.getValue(AppliedApotheosis.id("salvage_card")));
         log("registered block entity type = {}", ModBlockEntities.ME_SALVAGER.get());
-        log("card slots on the machine = {} salvage / {} speed",
+        log("card slots on the machine = {} salvage / {} speed | upgrade slots = {}",
                 Upgrades.getMaxInstallable(ModItems.SALVAGE_CARD.get(), ModItems.ME_SALVAGER.get()),
-                Upgrades.getMaxInstallable(AEItems.SPEED_CARD, ModItems.ME_SALVAGER.get()));
+                Upgrades.getMaxInstallable(AEItems.SPEED_CARD, ModItems.ME_SALVAGER.get()),
+                MeSalvagerBlockEntity.UPGRADE_SLOTS);
 
         // --- the mechanic itself, straight through the Apotheosis API ---
         LootRarity mythic = RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get();
@@ -131,6 +132,16 @@ public final class SelfTest {
         salvager.getUpgrades().addItems(new ItemStack(ModItems.SALVAGE_CARD.get(), 2));
         log("parallelism with 3 salvage cards = {} item(s) per tick (expect 3)",
                 salvager.getOperationsPerCycle());
+
+        // the intended maximum build has to fit: 3 salvage + 3 speed in the six upgrade slots
+        var speedLeftover = salvager.getUpgrades().addItems(new ItemStack(AEItems.SPEED_CARD, 3));
+        var timing = salvager.getTickingRequest(null);
+        log("max build: {} salvage + {} speed in {} slot(s), leftover {} -> {} item(s) per {} tick(s) = {} per second",
+                salvager.getUpgrades().getInstalledUpgrades(ModItems.SALVAGE_CARD.get()),
+                salvager.getUpgrades().getInstalledUpgrades(AEItems.SPEED_CARD.asItem()),
+                salvager.getUpgrades().size(), speedLeftover.getCount(),
+                salvager.getOperationsPerCycle(), timing.minTickRate(),
+                salvager.getOperationsPerCycle() * 20 / Math.max(1, timing.minTickRate()));
 
         var junkLeftover = salvager.insertForSalvaging(new ItemStack(Items.DIAMOND, 3));
         log("plain diamonds rejected? leftover = {} (3 = yes)", junkLeftover.getCount());

@@ -118,9 +118,9 @@ src/main/resources/
 | 稀有度筛选的五档与配色 | `RarityFilter.TIERS`（顺序 = 位掩码位序）/ `FALLBACK_COLORS`；图标直接取 `LootRarity#getMaterial()`（即 神秘废金属~神铸珍珠 那套材料），数据包改了材料会自动跟着变 |
 | 界面里那排图标的位置 | `assets/ae2/screens/me_salvager.json` 的 `rarityFilter` 条目：格子 18×18、间距 0（= 18 的列距，与槽位网格同拍），5 格共 90 px，起点 (80,16)，正好压在第 5~9 列槽位上方、右边缘与 9 格槽位行（8..170）齐平 |
 | 黑白名单与稀有度的组合规则 | `MeSalvagerBlockEntity.isAllowedByFilter`（白名单要求两部分都通过，黑名单命中任一即拦；任一部分为空 = 该部分不限制） |
-| 输入 / 过滤 / 升级槽数量 | `MeSalvagerBlockEntity.INPUT_SLOTS` / `FILTER_SLOTS` / `UPGRADE_SLOTS`（**注意**：改槽数还要同步改 `assets/ae2/screens/me_salvager.json` 里的槽位坐标与贴图 `textures/guis/me_salvager.png`；升级槽的位置由 AE2 的 `UpgradesPanel` 自己算，实测在 176 宽对话框上是 (186,8) 起、竖向排） |
+| 输入 / 过滤 / 升级槽数量 | `MeSalvagerBlockEntity.INPUT_SLOTS` / `FILTER_SLOTS` / `UPGRADE_SLOTS`（升级槽由 AE2 的 `UpgradesPanel` 自己定位，实测 176 宽对话框上从 (186,8) 起、竖向排；6 格时向下占到 y≈116，仍在 205 高的面板内） |
 | 耗电与处理速度 | `POWER_PER_OPERATION`、`IDLE_POWER`、`BASE_TICK_RATE`，以及 `getOperationsPerCycle()` / `getTickingRequest()` |
-| 卡牌上限 | `ModBlocks.MAX_SALVAGE_CARDS` / `MAX_SPEED_CARDS` |
+| 卡牌上限 | `ModBlocks.MAX_SALVAGE_CARDS` / `MAX_SPEED_CARDS`（各 3 张）；**注意** `MeSalvagerBlockEntity.UPGRADE_SLOTS` 必须 ≥ 两者之和（现在 6），否则"3 分解卡 + 3 加速卡"的满配摆不出来——README 的吞吐表就是这么写错的 |
 | 合成配方 | `src/main/resources/data/applied_apotheosis/recipes/*.json` |
 | 物品/界面文本 | `src/main/resources/assets/applied_apotheosis/lang/{en_us,zh_cn}.json` |
 
