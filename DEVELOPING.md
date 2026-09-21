@@ -144,7 +144,9 @@ src/main/resources/
 - 升级槽的坐标由 AE2 的 `UpgradesPanel` 自己算（176 宽对话框上实测从 **(186,8)** 起、竖排），
   JSON 里 `UPGRADE` 的值只是兜底；挪动或增减升级槽后，贴图 `textures/guis/me_salvager.png` 里烘死的槽位底纹要跟着改。
 - 界面贴图是烘焙式的：槽位底纹（`#8B8B8B` + `#373737` 边）直接画在 `me_salvager.png` 上，AE2 不会另外画槽底。
-  用 Java2D 从空白面板处复制一块盖掉旧槽位即可（面板底色 `#C6C6C6`）。
+  面板现在是 **176×236**，结构极简：第 0 行/列是 `#FFFFFF` 高光、最后一行/列是 `#555555` 阴影、内部 `#C6C6C6`。
+  要挪槽位就按"整块搬移"改贴图（把旧图对应行区间 `DrawImage` 到新 y），再同步 JSON 里的坐标与 `srcRect` 高度；
+  物品栏那几行是**按对话框底边对齐**的（`common/player_inventory.json` 用 `bottom`），所以面板加高多少它们就自动下移多少。
 
 ## 许可与第三方声明
 
