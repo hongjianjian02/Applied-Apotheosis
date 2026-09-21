@@ -30,11 +30,15 @@ import net.minecraft.world.item.ItemStack;
 public class RarityFilterWidget extends AbstractWidget implements ITooltip {
     /** Cell size and pitch: 18 matches the slot grid, so the row lines up with five slot columns. */
     private static final int CHIP = 18;
+    /** Cell pitch. Kept as a field so the grid stays aligned if a gap is ever wanted. */
     private static final int GAP = 0;
-    /** Chip backdrop, used for the unticked state. */
-    private static final int BACKDROP = 0xFF10151C;
+    /** Slot-like recess, matching the machine's own slots (#8B8B8B inside a #373737 border). */
+    private static final int SLOT_FILL = 0xFF8B8B8B;
+    private static final int SLOT_BORDER = 0xFF373737;
     /** Dimming overlay drawn over the icon of an unticked chip. */
-    private static final int DIMMED = 0xA0000000;
+    private static final int DIMMED = 0x8C000000;
+    /** How much of the rarity colour is mixed into the slot fill of a ticked chip. */
+    private static final float TINT = 0.5f;
 
     private final MeSalvagerMenu menu;
     private final int[] colors = new int[RarityFilter.size()];
@@ -91,10 +95,8 @@ public class RarityFilterWidget extends AbstractWidget implements ITooltip {
             boolean hovered = isHovered() && mouseX >= x && mouseX < x + CHIP && mouseY >= y && mouseY < y + CHIP;
             int color = this.colors[i];
 
-            g.fill(x, y, x + CHIP, y + CHIP, BACKDROP);
-            if (ticked) {
-                g.fill(x + 1, y + 1, x + CHIP - 1, y + CHIP - 1, withAlpha(color, 0x66));
-            }
+            // A recess like the machine's own slots: neutral fill, tinted by the rarity when ticked.
+            g.fill(x, y, x + CHIP, y + CHIP, ticked ? blend(SLOT_FILL, color, TINT) : SLOT_FILL);
 
             var icon = this.icons[i];
             if (!icon.isEmpty()) {
@@ -103,14 +105,14 @@ public class RarityFilterWidget extends AbstractWidget implements ITooltip {
                     g.fill(x + 1, y + 1, x + CHIP - 1, y + CHIP - 1, DIMMED);
                 }
             } else if (ticked) {
-                // Rarity data not loaded yet: fall back to a plain swatch.
-                g.fill(x + 3, y + 3, x + CHIP - 3, y + CHIP - 3, withAlpha(color, 0xFF));
+                g.fill(x + 4, y + 4, x + CHIP - 4, y + CHIP - 4, withAlpha(darken(color), 0xFF));
             }
 
-            // The hover highlight replaces the border instead of growing outwards, so the row never
-            // draws past the panel edge.
-            g.renderOutline(x, y, CHIP, CHIP,
-                    hovered ? 0xFFFFFFFF : withAlpha(color, ticked ? 0xFF : 0x55));
+            // Hairline border, with the rarity shown along the bottom edge and hover along the top.
+            g.fill(x, y, x + CHIP, y + 1, hovered ? 0xFFFFFFFF : SLOT_BORDER);
+            g.fill(x, y, x + 1, y + CHIP, SLOT_BORDER);
+            g.fill(x + CHIP - 1, y, x + CHIP, y + CHIP, SLOT_BORDER);
+            g.fill(x, y + CHIP - 1, x + CHIP, y + CHIP, ticked ? brighten(color) : SLOT_BORDER);
         }
     }
 
@@ -156,5 +158,23 @@ public class RarityFilterWidget extends AbstractWidget implements ITooltip {
 
     private static int withAlpha(int rgb, int alpha) {
         return (alpha << 24) | (rgb & 0xFFFFFF);
+    }
+
+    /** Mixes {@code t} of {@code b} into {@code a}, per channel. */
+    private static int blend(int a, int b, float t) {
+        int r = (int) (((a >> 16) & 0xFF) * (1 - t) + ((b >> 16) & 0xFF) * t);
+        int g = (int) (((a >> 8) & 0xFF) * (1 - t) + ((b >> 8) & 0xFF) * t);
+        int bl = (int) ((a & 0xFF) * (1 - t) + (b & 0xFF) * t);
+        return 0xFF000000 | (r << 16) | (g << 8) | bl;
+    }
+
+    /** Pushes a colour towards the light end, for the indicator line of a ticked chip. */
+    private static int brighten(int rgb) {
+        return blend(rgb, 0xFFFFFF, 0.35f);
+    }
+
+    /** Darkens a colour, used when a chip has no icon yet. */
+    private static int darken(int rgb) {
+        return blend(rgb, 0x000000, 0.25f);
     }
 }

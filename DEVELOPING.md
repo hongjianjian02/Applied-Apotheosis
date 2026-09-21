@@ -97,7 +97,7 @@ src/main/java/com/jianjian/appliedapotheosis/
 ├── menu/MeSalvagerMenu.java               容器菜单（输入 / 过滤 / 升级 / 玩家背包槽）
 ├── client/MeSalvagerScreen.java           AE2 风格界面（过滤按钮进 addToLeftToolbar 左侧工具栏，升级卡进 UpgradesPanel 右侧面板）
 ├── client/FilterModeButton.java           三态过滤按钮（WHITELIST / BLACKLIST 图标，走 AE2 工具栏）
-├── client/RarityFilterWidget.java         5 个稀有度图标（物品图标 = 该稀有度拆出的材料；点击 = 客户端动作，掩码同步回来）
+├── client/RarityFilterWidget.java         5 个稀有度格子（画成 AE2 槽位：灰底 + 细边框，勾选时按稀有度混色、底边亮色；图标 = 该稀有度拆出的材料；点击 = 客户端动作，掩码同步回来）
 ├── registry/                              方块 / 物品 / 方块实体 / 菜单 / 创造标签页注册
 └── dev/                                   开发者自检（仅系统属性开启时生效）
 src/main/resources/
