@@ -38,16 +38,5 @@ public class MeSalvagerScreen extends AEBaseScreen<MeSalvagerMenu> {
         super.updateBeforeRender();
         this.filterModeButton.setMode(this.menu.filterMode);
         this.rarityFilter.setMask(this.menu.rarityFilter);
-        setTextContent("status", statusText());
-    }
-
-    /** The one-line status AE2 machines are known for, shown between the input and the inventory. */
-    private Component statusText() {
-        if (!this.menu.hasCard) {
-            return Component.translatable("gui.applied_apotheosis.status.no_card");
-        }
-        return Component.translatable(this.menu.getHost().isActive()
-                ? "gui.applied_apotheosis.status.working"
-                : "gui.applied_apotheosis.status.idle");
     }
 }

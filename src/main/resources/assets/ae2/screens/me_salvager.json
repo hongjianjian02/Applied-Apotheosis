@@ -2,17 +2,17 @@
   "includes": ["common/common.json", "common/player_inventory.json"],
   "background": {
     "texture": "applied_apotheosis:textures/guis/me_salvager.png",
-    "srcRect": [0, 0, 176, 236]
+    "srcRect": [0, 0, 176, 205]
   },
   "slots": {
     "CONFIG": {
       "left": 8,
-      "top": 42,
+      "top": 40,
       "grid": "BREAK_AFTER_9COLS"
     },
     "MACHINE_INPUT": {
       "left": 8,
-      "top": 80,
+      "top": 76,
       "grid": "BREAK_AFTER_9COLS"
     },
     "UPGRADE": {
@@ -46,16 +46,7 @@
       },
       "position": {
         "left": 8,
-        "top": 66
-      }
-    },
-    "status": {
-      "text": {
-        "translate": "gui.applied_apotheosis.status.idle"
-      },
-      "position": {
-        "left": 8,
-        "top": 111
+        "top": 64
       }
     }
   },
