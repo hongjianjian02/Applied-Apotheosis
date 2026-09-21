@@ -28,8 +28,9 @@ import net.minecraft.world.item.ItemStack;
  * comes back through the synced field.
  */
 public class RarityFilterWidget extends AbstractWidget implements ITooltip {
+    /** Cell size and pitch: 18 matches the slot grid, so the row lines up with five slot columns. */
     private static final int CHIP = 18;
-    private static final int GAP = 1;
+    private static final int GAP = 0;
     /** Chip backdrop, used for the unticked state. */
     private static final int BACKDROP = 0xFF10151C;
     /** Dimming overlay drawn over the icon of an unticked chip. */
@@ -87,6 +88,7 @@ public class RarityFilterWidget extends AbstractWidget implements ITooltip {
             int x = getX() + i * (CHIP + GAP);
             int y = getY();
             boolean ticked = RarityFilter.isTicked(this.mask, i);
+            boolean hovered = isHovered() && mouseX >= x && mouseX < x + CHIP && mouseY >= y && mouseY < y + CHIP;
             int color = this.colors[i];
 
             g.fill(x, y, x + CHIP, y + CHIP, BACKDROP);
@@ -105,11 +107,10 @@ public class RarityFilterWidget extends AbstractWidget implements ITooltip {
                 g.fill(x + 3, y + 3, x + CHIP - 3, y + CHIP - 3, withAlpha(color, 0xFF));
             }
 
-            g.renderOutline(x, y, CHIP, CHIP, withAlpha(color, ticked ? 0xFF : 0x55));
-
-            if (isHovered() && mouseX >= x && mouseX < x + CHIP && mouseY >= y && mouseY < y + CHIP) {
-                g.renderOutline(x - 1, y - 1, CHIP + 2, CHIP + 2, 0xFFFFFFFF);
-            }
+            // The hover highlight replaces the border instead of growing outwards, so the row never
+            // draws past the panel edge.
+            g.renderOutline(x, y, CHIP, CHIP,
+                    hovered ? 0xFFFFFFFF : withAlpha(color, ticked ? 0xFF : 0x55));
         }
     }
 
