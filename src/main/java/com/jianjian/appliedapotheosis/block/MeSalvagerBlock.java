@@ -9,7 +9,6 @@ import appeng.block.AEBaseEntityBlock;
 import appeng.menu.MenuOpener;
 import appeng.menu.locator.MenuLocators;
 import appeng.util.InteractionUtil;
-import dev.shadowsoffire.apotheosis.adventure.affix.AffixHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -60,8 +59,8 @@ public class MeSalvagerBlock extends AEBaseEntityBlock<MeSalvagerBlockEntity> {
             return InteractionResult.PASS;
         }
 
-        // Right-clicking with Apotheosis equipment feeds it straight into the machine.
-        if (heldItem != null && !heldItem.isEmpty() && AffixHelper.hasAffixes(heldItem)) {
+        // Right-clicking with Apotheosis loot (affix gear or a gem) feeds it straight into the machine.
+        if (heldItem != null && feedsOnUse(heldItem)) {
             if (level.isClientSide()) {
                 return InteractionResult.SUCCESS;
             }
@@ -79,6 +78,14 @@ public class MeSalvagerBlock extends AEBaseEntityBlock<MeSalvagerBlockEntity> {
 
         openMenu(level, player, blockEntity);
         return InteractionResult.sidedSuccess(level.isClientSide());
+    }
+
+    /**
+     * Whether right-clicking the machine with this stack should feed it instead of opening the GUI.
+     * Both affix equipment and gems qualify - gems have no affix list, they are matched by rarity.
+     */
+    public static boolean feedsOnUse(ItemStack stack) {
+        return !stack.isEmpty() && MeSalvagerBlockEntity.hasRequiredRarity(stack);
     }
 
     private static void openMenu(Level level, Player player, MeSalvagerBlockEntity blockEntity) {

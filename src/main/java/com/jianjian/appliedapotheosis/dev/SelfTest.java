@@ -1,6 +1,7 @@
 package com.jianjian.appliedapotheosis.dev;
 
 import com.jianjian.appliedapotheosis.AppliedApotheosis;
+import com.jianjian.appliedapotheosis.block.MeSalvagerBlock;
 import com.jianjian.appliedapotheosis.blockentity.MeSalvagerBlockEntity;
 import com.jianjian.appliedapotheosis.filter.FilterMode;
 import com.jianjian.appliedapotheosis.filter.RarityFilter;
@@ -261,6 +262,11 @@ public final class SelfTest {
         log("after marking: filter holds {} (1 x marker) | carried stack is still {} (not consumed)",
                 salvager.getFilterInventory().getStackInSlot(0), carried);
         salvager.getFilterInventory().clear();
+
+        log("right-click feeding: affix gear = {} | gem = {} | plain diamond = {} (expect true / true / false)",
+                MeSalvagerBlock.feedsOnUse(rolledGear.copy()),
+                MeSalvagerBlock.feedsOnUse(testGem.copy()),
+                MeSalvagerBlock.feedsOnUse(new ItemStack(Items.DIAMOND)));
 
         salvager.setFilterMode(FilterMode.DISABLED);
     }
