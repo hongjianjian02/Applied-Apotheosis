@@ -4,6 +4,7 @@ import com.jianjian.appliedapotheosis.menu.MeSalvagerMenu;
 
 import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.style.ScreenStyle;
+import appeng.client.gui.widgets.ProgressBar;
 import appeng.client.gui.widgets.UpgradesPanel;
 import appeng.menu.SlotSemantics;
 import net.minecraft.network.chat.Component;
@@ -19,6 +20,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class MeSalvagerScreen extends AEBaseScreen<MeSalvagerMenu> {
     private final FilterModeButton filterModeButton;
     private final RarityFilterWidget rarityFilter;
+    private final ProgressBar progressBar;
 
     public MeSalvagerScreen(MeSalvagerMenu menu, Inventory playerInventory, Component title, ScreenStyle style) {
         super(menu, playerInventory, title, style);
@@ -31,6 +33,10 @@ public class MeSalvagerScreen extends AEBaseScreen<MeSalvagerMenu> {
 
         this.rarityFilter = new RarityFilterWidget(menu);
         this.widgets.add("rarityFilter", this.rarityFilter);
+
+        // AE2's progress bar: it pulses with the machine's cycle and its tooltip says why it is idle.
+        this.progressBar = new ProgressBar(menu, style.getImage("progressBar"), ProgressBar.Direction.VERTICAL);
+        this.widgets.add("progressBar", this.progressBar);
     }
 
     @Override
@@ -38,5 +44,17 @@ public class MeSalvagerScreen extends AEBaseScreen<MeSalvagerMenu> {
         super.updateBeforeRender();
         this.filterModeButton.setMode(this.menu.filterMode);
         this.rarityFilter.setMask(this.menu.rarityFilter);
+        this.progressBar.setFullMsg(statusText());
+    }
+
+    /** Shown in the progress bar's tooltip: why the machine is or is not running. */
+    private Component statusText() {
+        if (!this.menu.hasCard) {
+            return Component.translatable("gui.applied_apotheosis.status.no_card");
+        }
+        if (!this.menu.working) {
+            return Component.translatable("gui.applied_apotheosis.status.idle");
+        }
+        return Component.translatable("gui.applied_apotheosis.status.working", this.menu.getMaxProgress());
     }
 }

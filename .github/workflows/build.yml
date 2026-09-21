@@ -1,0 +1,45 @@
+name: Build
+
+# 每次推送到 main、每个 PR、以及手动触发时：编译 + 跑服务端自检。
+# 自检（gradlew runServer -Pselftest）会真的起一个服务器，断言注册、卡牌并行度、
+# 稀有度门槛、黑白名单、稀有度筛选、幽灵过滤槽、宝石拆解与产物入网；
+# 任何一条不成立就以非零状态退出，所以这个工作流挂了就说明有规则被破坏了。
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build
+        run: ./gradlew build --no-daemon --stacktrace
+
+      - name: Server self-test
+        run: ./gradlew runServer -Pselftest --no-daemon
+
+      - name: Upload the jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: applied-apotheosis-jar
+          path: build/libs/*.jar
+          if-no-files-found: error

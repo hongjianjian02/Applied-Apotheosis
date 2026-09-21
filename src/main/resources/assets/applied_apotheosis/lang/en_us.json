@@ -21,5 +21,8 @@
   "gui.applied_apotheosis.rarity.rare": "Rare",
   "gui.applied_apotheosis.rarity.epic": "Epic",
   "gui.applied_apotheosis.rarity.mythic": "Mythic",
-  "gui.applied_apotheosis.affix_only": "Accepts Apotheosis affix equipment and gems (clicking or dragging from JEI only marks the entry, nothing is consumed)"
+  "gui.applied_apotheosis.affix_only": "Accepts Apotheosis affix equipment and gems (clicking or dragging from JEI only marks the entry, nothing is consumed)",
+  "gui.applied_apotheosis.status.no_card": "No salvage card installed - the machine stays off",
+  "gui.applied_apotheosis.status.idle": "Idle - nothing to salvage, or the network / power cannot keep up",
+  "gui.applied_apotheosis.status.working": "Salvaging - %s ticks per cycle"
 }

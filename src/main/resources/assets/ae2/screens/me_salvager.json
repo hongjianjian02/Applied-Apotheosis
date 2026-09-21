@@ -50,10 +50,20 @@
       }
     }
   },
+  "images": {
+    "progressBar": {
+      "texture": "applied_apotheosis:textures/guis/me_salvager.png",
+      "srcRect": [200, 0, 6, 18]
+    }
+  },
   "widgets": {
     "rarityFilter": {
       "left": 80,
       "top": 16
+    },
+    "progressBar": {
+      "left": 162,
+      "top": 96
     }
   }
 }

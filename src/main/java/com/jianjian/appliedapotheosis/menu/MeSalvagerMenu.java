@@ -11,6 +11,7 @@ import appeng.api.inventories.InternalInventory;
 import appeng.menu.AEBaseMenu;
 import appeng.menu.SlotSemantics;
 import appeng.menu.guisync.GuiSync;
+import appeng.menu.interfaces.IProgressProvider;
 import appeng.menu.slot.AppEngSlot;
 import appeng.menu.slot.FakeSlot;
 
@@ -25,7 +26,7 @@ import net.minecraft.world.item.ItemStack;
  * Both travel to the server as client actions, and the resulting values come back through the
  * {@link GuiSync} fields.
  */
-public class MeSalvagerMenu extends AEBaseMenu {
+public class MeSalvagerMenu extends AEBaseMenu implements IProgressProvider {
     private static final String ACTION_CYCLE_FILTER = "cycleFilterMode";
     private static final String ACTION_TOGGLE_RARITY = "toggleRarityFilter";
 
@@ -38,6 +39,18 @@ public class MeSalvagerMenu extends AEBaseMenu {
     /** Mirrors {@link MeSalvagerBlockEntity#getRarityFilter()} on the client. */
     @GuiSync(11)
     public int rarityFilter = RarityFilter.NONE;
+
+    /** Whether the machine is salvaging right now, shown by the progress bar. */
+    @GuiSync(12)
+    public boolean working = false;
+
+    /** Whether a salvage card is installed - without one nothing happens at all. */
+    @GuiSync(13)
+    public boolean hasCard = false;
+
+    /** Ticks per cycle with the installed speed cards. */
+    @GuiSync(14)
+    public int cycleTicks = 1;
 
     public MeSalvagerMenu(int id, Inventory playerInventory, MeSalvagerBlockEntity host) {
         super(ModMenus.ME_SALVAGER.get(), id, playerInventory, host);
@@ -114,8 +127,34 @@ public class MeSalvagerMenu extends AEBaseMenu {
         if (isServerSide()) {
             this.filterMode = this.host.getFilterMode();
             this.rarityFilter = this.host.getRarityFilter();
+            this.working = this.host.isActive();
+            this.hasCard = this.host.isSalvageCardInstalled();
+            this.cycleTicks = this.host.getCycleTicks();
         }
         super.broadcastChanges();
+    }
+
+    // ------------------------------------------------------------------
+    // Progress bar (AE2's ProgressBar widget reads these)
+    // ------------------------------------------------------------------
+
+    /**
+     * How far the current cycle has run. The machine works instantly once per cycle, so the bar is
+     * driven by the world clock: it pulses with the machine's rhythm instead of pretending to be a
+     * long-running job.
+     */
+    @Override
+    public int getCurrentProgress() {
+        var level = this.host.getLevel();
+        if (level == null || !this.working) {
+            return 0;
+        }
+        return (int) (level.getGameTime() % getMaxProgress());
+    }
+
+    @Override
+    public int getMaxProgress() {
+        return Math.max(1, this.cycleTicks);
     }
 
     /**

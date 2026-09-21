@@ -53,6 +53,8 @@ public final class SelfTest {
     private static int ticks;
     private static int consumedAt = -1;
     private static boolean finished;
+    private static int checks;
+    private static int failed;
 
     private SelfTest() {
     }
@@ -268,6 +270,81 @@ public final class SelfTest {
                 MeSalvagerBlock.feedsOnUse(testGem.copy()),
                 MeSalvagerBlock.feedsOnUse(new ItemStack(Items.DIAMOND)));
 
+        // ------------------------------------------------------------------
+        // Assertions. The narrative logs above stay readable for humans; these
+        // are the machine-checkable version, so CI fails when a rule breaks.
+        // ------------------------------------------------------------------
+        expect("upgrade slots fit 3 salvage + 3 speed", MeSalvagerBlockEntity.UPGRADE_SLOTS, 6);
+        expect("salvage card limit", Upgrades.getMaxInstallable(ModItems.SALVAGE_CARD.get(),
+                ModItems.ME_SALVAGER.get()), 3);
+        expect("speed card limit", Upgrades.getMaxInstallable(AEItems.SPEED_CARD,
+                ModItems.ME_SALVAGER.get()), 3);
+        expect("parallelism with 3 salvage cards", salvager.getOperationsPerCycle(), 3);
+        expect("cycle length with 3 speed cards", salvager.getCycleTicks(), 1);
+        expect("three salvage plus three speed all fit", speedLeftover.getCount(), 0);
+
+        expect("affix gear counts as loot", MeSalvagerBlockEntity.isApotheosisLoot(rolledGear.copy()), true);
+        expect("affix gear passes the rarity gate", MeSalvagerBlockEntity.hasRequiredRarity(rolledGear.copy()), true);
+        expect("common gear passes the gate", MeSalvagerBlockEntity.hasRequiredRarity(commonGear.copy()), true);
+        expect("plain diamond is not accepted", MeSalvagerBlockEntity.hasRequiredRarity(new ItemStack(Items.DIAMOND)), false);
+        expect("emptied affix list is rejected", MeSalvagerBlockEntity.hasRequiredRarity(stripped.copy()), false);
+        expect("affix gear salvages into its rarity material",
+                SalvagingMenu.salvageItem(level, rolledGear.copy()).stream().anyMatch(s -> s.is(mythic.getMaterial())),
+                true);
+        if (!testGem.isEmpty()) {
+            expect("gem counts as loot", MeSalvagerBlockEntity.isApotheosisLoot(testGem.copy()), true);
+            expect("gem passes the rarity gate", MeSalvagerBlockEntity.hasRequiredRarity(testGem.copy()), true);
+            expect("gem salvages into gem dust",
+                    SalvagingMenu.salvageItem(level, testGem.copy()).stream()
+                            .anyMatch(s -> "apotheosis:gem_dust"
+                                    .equals(String.valueOf(ForgeRegistries.ITEMS.getKey(s.getItem())))),
+                    true);
+        }
+
+        // blacklist / whitelist, re-checked through the machine's own acceptance path
+        salvager.getFilterInventory().clear();
+        salvager.getInternalInventory().clear();
+        salvager.setFilterMode(FilterMode.BLACKLIST);
+        salvager.getFilterInventory().setItemDirect(0, new ItemStack(Items.DIAMOND_SWORD));
+        expect("blacklist blocks the listed type", salvager.insertForSalvaging(rolledGear.copy()).getCount(), 1);
+        expect("blacklist lets another type through", salvager.insertForSalvaging(otherGear.copy()).getCount(), 0);
+        salvager.getInternalInventory().clear();
+
+        salvager.setFilterMode(FilterMode.WHITELIST);
+        expect("whitelist lets the listed type through", salvager.insertForSalvaging(rolledGear.copy()).getCount(), 0);
+        expect("whitelist blocks another type", salvager.insertForSalvaging(otherGear.copy()).getCount(), 1);
+        salvager.getInternalInventory().clear();
+        salvager.getFilterInventory().clear();
+
+        salvager.setRarityFilter(mythicBit);
+        expect("whitelist + only mythic ticked accepts mythic",
+                salvager.insertForSalvaging(rolledGear.copy()).getCount(), 0);
+        expect("whitelist + only mythic ticked blocks epic",
+                salvager.insertForSalvaging(epicGear.copy()).getCount(), 1);
+        salvager.getInternalInventory().clear();
+
+        salvager.setFilterMode(FilterMode.BLACKLIST);
+        expect("blacklist + mythic ticked blocks mythic",
+                salvager.insertForSalvaging(rolledGear.copy()).getCount(), 1);
+        expect("blacklist + mythic ticked still accepts common",
+                salvager.insertForSalvaging(commonGear.copy()).getCount(), 0);
+        salvager.getInternalInventory().clear();
+
+        salvager.setRarityFilter(RarityFilter.NONE);
+        salvager.setFilterMode(FilterMode.WHITELIST);
+        expect("whitelist with nothing ticked and an empty list is no restriction",
+                salvager.insertForSalvaging(commonGear.copy()).getCount(), 0);
+        salvager.getInternalInventory().clear();
+
+        expect("filter slot refuses normal placement", markerSlot.mayPlace(rolledGear.copy()), false);
+        expect("filter slot accepts loot markers", markerSlot.canSetFilterTo(rolledGear.copy()), true);
+        expect("filter slot rejects junk markers", markerSlot.canSetFilterTo(new ItemStack(Items.DIAMOND)), false);
+        expect("right-click feeds affix gear", MeSalvagerBlock.feedsOnUse(rolledGear.copy()), true);
+        if (!testGem.isEmpty()) {
+            expect("right-click feeds gems", MeSalvagerBlock.feedsOnUse(testGem.copy()), true);
+        }
+        expect("right-click does not feed junk", MeSalvagerBlock.feedsOnUse(new ItemStack(Items.DIAMOND)), false);
+
         salvager.setFilterMode(FilterMode.DISABLED);
     }
 
@@ -338,7 +415,22 @@ public final class SelfTest {
 
             var mythic = RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get();
             log("expected material from the affix item = {}", new ItemStack(mythic.getMaterial()));
-            log("gem dust from the gem reached the network = {} (expect true)", contents.contains("gem_dust"));
+
+            expect("input buffer is empty again", inputCount(), 0);
+            expect("network holds the salvaged material", contents.contains("mythic_material"), true);
+            if (!testGem.isEmpty()) {
+                expect("network holds the gem dust", contents.contains("gem_dust"), true);
+            }
+
+            log("assertions: {} checked, {} failed", checks, failed);
+            if (failed > 0) {
+                AppliedApotheosis.LOGGER.error("[selftest] {} of {} assertions FAILED", failed, checks);
+                level.getServer().halt(false);
+                // Leave with a non-zero status so CI notices a broken rule.
+                Runtime.getRuntime().halt(1);
+                return;
+            }
+            log("all assertions passed");
         } catch (Throwable t) {
             AppliedApotheosis.LOGGER.error("[selftest] verification FAILED", t);
         } finally {
@@ -376,5 +468,15 @@ public final class SelfTest {
 
     private static void log(String message, Object... args) {
         AppliedApotheosis.LOGGER.info("[selftest] " + message, args);
+    }
+
+    /** Records an assertion. The run exits non-zero when any of them does not hold. */
+    private static void expect(String what, Object actual, Object expected) {
+        checks++;
+        boolean ok = java.util.Objects.equals(String.valueOf(actual), String.valueOf(expected));
+        if (!ok) {
+            failed++;
+        }
+        log("{} = {} (expected {}){}", what, actual, expected, ok ? "" : "   <-- FAILED");
     }
 }

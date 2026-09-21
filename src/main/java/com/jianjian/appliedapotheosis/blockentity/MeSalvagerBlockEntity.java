@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.jianjian.appliedapotheosis.AppliedApotheosisConfig;
 import com.jianjian.appliedapotheosis.filter.FilterMode;
 import com.jianjian.appliedapotheosis.filter.RarityFilter;
 import com.jianjian.appliedapotheosis.registry.ModItems;
@@ -72,19 +73,9 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
     /** Slots holding the blacklist/whitelist entries. */
     public static final int FILTER_SLOTS = 9;
 
-    /** AE consumed while the machine is connected to a network, but idle. */
-    private static final double IDLE_POWER = 1.0;
-    /** AE consumed per salvaged item. */
-    private static final double POWER_PER_OPERATION = 20.0;
-    /** How often the machine runs when idle-ish, before speed cards are taken into account. */
-    private static final int BASE_TICK_RATE = 10;
-
-    /**
-     * Minimum Apotheosis rarity the machine works with. Items below it are rejected from both the
-     * input buffer and the filter list. Set this to {@code apotheosis:mythic} (or any other rarity)
-     * to restrict the machine to higher-tier equipment.
-     */
-    private static final ResourceLocation MINIMUM_RARITY = Apotheosis.loc("common");
+    /** Raw string of the configured minimum rarity, used to detect config changes. */
+    private static String cachedMinimumRarityRaw;
+    private static ResourceLocation cachedMinimumRarity;
 
     private final AppEngInternalInventory input;
     private final AppEngInternalInventory output;
@@ -114,7 +105,7 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
         this.exposedInput = new FilteredInternalInventory(this.input, new SalvageableItemFilter());
 
         this.getMainNode()
-                .setIdlePowerUsage(IDLE_POWER)
+                .setIdlePowerUsage(AppliedApotheosisConfig.IDLE_POWER.get())
                 .setFlags()
                 .addService(IGridTickable.class, this);
 
@@ -285,7 +276,7 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
     }
 
     /**
-     * Whether the item is Apotheosis loot of at least {@link #MINIMUM_RARITY} rarity - either affix
+     * Whether the item is Apotheosis loot of at least the configured minimum rarity - either affix
      * equipment or a gem. Everything else is rejected by the input buffer and by the filter list alike.
      */
     public static boolean hasRequiredRarity(ItemStack stack) {
@@ -298,8 +289,18 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
             return false;
         }
 
-        var minimum = RarityRegistry.INSTANCE.holder(MINIMUM_RARITY);
+        var minimum = RarityRegistry.INSTANCE.holder(minimumRarity());
         return minimum.isBound() && rarity.get().isAtLeast(minimum.get());
+    }
+
+    /** The configured minimum rarity ({@code machine.minimumRarity} in the config). */
+    public static ResourceLocation minimumRarity() {
+        String raw = AppliedApotheosisConfig.MINIMUM_RARITY.get();
+        if (!raw.equals(cachedMinimumRarityRaw)) {
+            cachedMinimumRarityRaw = raw;
+            cachedMinimumRarity = ResourceLocation.tryParse(raw);
+        }
+        return cachedMinimumRarity != null ? cachedMinimumRarity : Apotheosis.loc("common");
     }
 
     /**
@@ -424,8 +425,15 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
 
     @Override
     public TickingRequest getTickingRequest(IGridNode node) {
-        int minTickRate = Math.max(1, BASE_TICK_RATE - 3 * this.speedCards());
+        int minTickRate = Math.max(1, AppliedApotheosisConfig.BASE_TICK_RATE.get()
+                - AppliedApotheosisConfig.TICKS_PER_SPEED_CARD.get() * this.speedCards());
         return new TickingRequest(minTickRate, minTickRate + 20, !this.hasWork(), false);
+    }
+
+    /** Ticks between two cycles with the cards currently installed. */
+    public int getCycleTicks() {
+        return Math.max(1, AppliedApotheosisConfig.BASE_TICK_RATE.get()
+                - AppliedApotheosisConfig.TICKS_PER_SPEED_CARD.get() * this.speedCards());
     }
 
     @Override
@@ -545,11 +553,12 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
         }
 
         var energy = grid.getEnergyService();
-        if (energy.extractAEPower(POWER_PER_OPERATION, Actionable.SIMULATE,
-                PowerMultiplier.CONFIG) < POWER_PER_OPERATION) {
+        double powerPerOperation = AppliedApotheosisConfig.POWER_PER_OPERATION.get();
+        if (energy.extractAEPower(powerPerOperation, Actionable.SIMULATE,
+                PowerMultiplier.CONFIG) < powerPerOperation) {
             return false;
         }
-        energy.extractAEPower(POWER_PER_OPERATION, Actionable.MODULATE, PowerMultiplier.CONFIG);
+        energy.extractAEPower(powerPerOperation, Actionable.MODULATE, PowerMultiplier.CONFIG);
 
         for (var result : results) {
             if (result.isEmpty()) {

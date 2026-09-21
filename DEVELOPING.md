@@ -88,13 +88,14 @@ $env:JAVA_HOME = "C:\Program Files\Java\jdk-17"
 
 ```
 src/main/java/com/jianjian/appliedapotheosis/
-├── AppliedApotheosis.java                 模组入口
-├── block/MeSalvagerBlock.java             方块（右键开界面 / 投放装备）
+├── AppliedApotheosis.java                 模组入口（注册内容 + 配置文件）
+├── AppliedApotheosisConfig.java           Forge 配置（耗电 / 周期 / 每张加速卡缩短多少 / 稀有度门槛）
+├── block/MeSalvagerBlock.java             方块（右键开界面 / 手持战利品右键投料）
 ├── blockentity/MeSalvagerBlockEntity.java 机器逻辑（ME 网络节点 / 拆解 / 耗电 / 黑白名单 / 稀有度门槛）
 ├── filter/FilterMode.java                 不过滤 / 白名单 / 黑名单
 ├── filter/RarityFilter.java               稀有度筛选（普通~神话五档的位掩码 + 颜色回退值）
 ├── item/SalvageCardItem.java              分解卡（AE2 UpgradeCardItem）
-├── menu/MeSalvagerMenu.java               容器菜单（输入 / 过滤 / 升级 / 玩家背包槽）
+├── menu/MeSalvagerMenu.java               容器菜单（输入 / 过滤 / 升级 / 玩家背包槽 + 进度条同步）
 ├── client/MeSalvagerScreen.java           AE2 风格界面（过滤按钮进 addToLeftToolbar 左侧工具栏，升级卡进 UpgradesPanel 右侧面板）
 ├── client/FilterModeButton.java           三态过滤按钮（WHITELIST / BLACKLIST 图标，走 AE2 工具栏）
 ├── client/RarityFilterWidget.java         5 个稀有度格子（画成 AE2 槽位：灰底 + 细边框，勾选时按稀有度混色、底边亮色；图标 = 该稀有度拆出的材料；点击 = 客户端动作，掩码同步回来）
@@ -105,13 +106,17 @@ src/main/resources/
 ├── assets/ae2/screens/me_salvager.json    GUI 样式表（AE2 只从 ae2 命名空间读取样式）
 ├── assets/applied_apotheosis/             模型、方块状态、贴图（含 GUI 背景）、语言文件
 └── data/applied_apotheosis/               战利品表、合成配方
+.github/workflows/
+├── build.yml                              每次 push/PR：编译 + 跑服务端自检（自检失败即 CI 失败）
+└── release.yml                            打 v* tag：构建并把 jar 挂到 Release
+updates.json                               游戏内更新检查用的版本清单（改了版本号记得同步）
 ```
 
 ## 想改数值时看哪里
 
 | 想改什么 | 位置 |
 |---|---|
-| 稀有度门槛（现在 = 全部收） | `MeSalvagerBlockEntity.MINIMUM_RARITY`（`apotheosis:common`；改成 `mythic` 即只收神话及以上） |
+| 稀有度门槛 | **配置文件** `machine.minimumRarity`（默认 `apotheosis:common`；改 `mythic` 即只收神话及以上） |
 | 接受什么（词缀装备 / 宝石） | `MeSalvagerBlockEntity.isApotheosisLoot`（词缀列表 or `GemItem.getGem(stack).isBound()`）与 `hasRequiredRarity` / `isAccepted` |
 | 过滤列表的标记规则 | `MeSalvagerMenu.SalvageableFakeSlot`（AE2 `FakeSlot` 子类，重写 `canSetFilterTo` 限定为神化战利品）——`mayPlace` 恒为 false，所以正常点击永远不会消耗物品；JEI 拖入由 AE2 的 `GhostIngredientHandler` 负责，它同样走 `canSetFilterTo` |
 | 哪些物品会被跳过 | `findSalvageableSlot()`：稀有度合格但神化没有拆解配方的（远古装备）直接跳过，不堵住队列 |
@@ -119,7 +124,7 @@ src/main/resources/
 | 界面里那排图标的位置 | `assets/ae2/screens/me_salvager.json` 的 `rarityFilter` 条目：格子 18×18、间距 0（= 18 的列距，与槽位网格同拍），5 格共 90 px，起点 (80,16)，正好压在第 5~9 列槽位上方、右边缘与 9 格槽位行（8..170）齐平 |
 | 黑白名单与稀有度的组合规则 | `MeSalvagerBlockEntity.isAllowedByFilter`（白名单要求两部分都通过，黑名单命中任一即拦；任一部分为空 = 该部分不限制） |
 | 输入 / 过滤 / 升级槽数量 | `MeSalvagerBlockEntity.INPUT_SLOTS` / `FILTER_SLOTS` / `UPGRADE_SLOTS`（升级槽由 AE2 的 `UpgradesPanel` 自己定位，实测 176 宽对话框上从 (186,8) 起、竖向排；6 格时向下占到 y≈116，仍在 205 高的面板内） |
-| 耗电与处理速度 | `POWER_PER_OPERATION`、`IDLE_POWER`、`BASE_TICK_RATE`，以及 `getOperationsPerCycle()` / `getTickingRequest()` |
+| 耗电与处理速度 | **配置文件** `idlePower` / `powerPerOperation` / `baseTickRate` / `ticksPerSpeedCard`（见 `AppliedApotheosisConfig`）；周期算法在 `getCycleTicks()` / `getTickingRequest()` |
 | 卡牌上限 | `ModBlocks.MAX_SALVAGE_CARDS` / `MAX_SPEED_CARDS`（各 3 张）；**注意** `MeSalvagerBlockEntity.UPGRADE_SLOTS` 必须 ≥ 两者之和（现在 6），否则"3 分解卡 + 3 加速卡"的满配摆不出来——README 的吞吐表就是这么写错的 |
 | 合成配方 | `src/main/resources/data/applied_apotheosis/recipes/*.json` |
 | 物品/界面文本 | `src/main/resources/assets/applied_apotheosis/lang/{en_us,zh_cn}.json` |
@@ -127,12 +132,15 @@ src/main/resources/
 ## 已知限制
 
 - 方块没有朝向属性，正面固定为北面。
-- 稀有度门槛是写死的常量，不能在游戏里调。
 - 过滤列表只按物品种类匹配，同一物品种类的不同词缀无法区分。
 - 过滤列表里的条目是**幽灵标记**，不是真物品：机器被破坏时不会掉落它们（否则等于凭空产出）。
 - 稀有度筛选只有那 5 档（普通~神话）；远古不在其中，白名单勾了任意档就会把远古一起拦掉，
   黑名单则永远不因稀有度拦远古。
 - 宝石只看稀有度，纯度（purity）不影响宝石粉数量；这条跟着神化自己的配方走。
+- 待机耗电是建机器时读一次配置，改配置后已放置的机器要重新加载区块才生效；
+  耗电 / 周期 / 稀有度门槛都是每次用到时读，改完立刻生效。
+- 进度条显示的是"机器的工作节奏"（按世界时间在一个周期内循环），不是某个长任务的进度——
+  机器是瞬间完成拆解的，做成假进度反而误导。
 
 ## 踩过的坑
 
