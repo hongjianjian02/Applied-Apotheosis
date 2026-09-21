@@ -141,6 +141,9 @@ public final class ClientSelfTest {
                         machine.getFilterInventory().getStackInSlot(2));
                 log("rarity filter mask = 0b{}", Integer.toBinaryString(machine.getRarityFilter()));
 
+                // Put the machine in the hotbar so the screenshot also shows the block's item form.
+                player.getInventory().setItem(0, new ItemStack(ModItems.ME_SALVAGER.get()));
+
                 log("world prepared at {}, opening GUI", machinePos);
                 log("menu type = {} | block entity = {}",
                         net.minecraftforge.registries.ForgeRegistries.MENU_TYPES
