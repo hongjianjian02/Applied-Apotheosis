@@ -7,7 +7,6 @@
   "container.applied_apotheosis.me_salvager": "ME 分解器",
   "gui.applied_apotheosis.input": "待分解",
   "gui.applied_apotheosis.filter": "过滤列表",
-  "gui.applied_apotheosis.upgrades": "升级",
   "gui.applied_apotheosis.filter_mode": "过滤模式：%s",
   "gui.applied_apotheosis.filter.disabled": "不过滤",
   "gui.applied_apotheosis.filter.whitelist": "白名单",
@@ -23,5 +22,7 @@
   "gui.applied_apotheosis.rarity.epic": "史诗",
   "gui.applied_apotheosis.rarity.mythic": "神话",
   "gui.applied_apotheosis.affix_only": "只接受神化词缀装备与宝石",
-  "gui.applied_apotheosis.no_card": "未安装分解卡"
+  "gui.applied_apotheosis.status.no_card": "状态：未装分解卡，机器不工作",
+  "gui.applied_apotheosis.status.idle": "状态：待机",
+  "gui.applied_apotheosis.status.working": "状态：正在拆解"
 }

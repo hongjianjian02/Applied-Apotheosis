@@ -36,6 +36,10 @@ public class MeSalvagerMenu extends AEBaseMenu {
     @GuiSync(11)
     public int rarityFilter = RarityFilter.NONE;
 
+    /** Mirrors whether the machine has a salvage card installed. */
+    @GuiSync(12)
+    public boolean hasCard = false;
+
     public MeSalvagerMenu(int id, Inventory playerInventory, MeSalvagerBlockEntity host) {
         super(ModMenus.ME_SALVAGER.get(), id, playerInventory, host);
         this.host = host;
@@ -108,6 +112,7 @@ public class MeSalvagerMenu extends AEBaseMenu {
         if (isServerSide()) {
             this.filterMode = this.host.getFilterMode();
             this.rarityFilter = this.host.getRarityFilter();
+            this.hasCard = this.host.isSalvageCardInstalled();
         }
         super.broadcastChanges();
     }

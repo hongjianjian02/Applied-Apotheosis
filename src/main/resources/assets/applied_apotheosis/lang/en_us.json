@@ -7,7 +7,6 @@
   "container.applied_apotheosis.me_salvager": "ME Salvager",
   "gui.applied_apotheosis.input": "To salvage",
   "gui.applied_apotheosis.filter": "Filter list",
-  "gui.applied_apotheosis.upgrades": "Upgrades",
   "gui.applied_apotheosis.filter_mode": "Filter: %s",
   "gui.applied_apotheosis.filter.disabled": "Disabled",
   "gui.applied_apotheosis.filter.whitelist": "Whitelist",
@@ -23,5 +22,7 @@
   "gui.applied_apotheosis.rarity.epic": "Epic",
   "gui.applied_apotheosis.rarity.mythic": "Mythic",
   "gui.applied_apotheosis.affix_only": "Accepts Apotheosis affix equipment and gems",
-  "gui.applied_apotheosis.no_card": "No salvage card installed"
+  "gui.applied_apotheosis.status.no_card": "Status: no salvage card, machine idle",
+  "gui.applied_apotheosis.status.idle": "Status: idle",
+  "gui.applied_apotheosis.status.working": "Status: salvaging"
 }

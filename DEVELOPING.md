@@ -95,8 +95,8 @@ src/main/java/com/jianjian/appliedapotheosis/
 ├── filter/RarityFilter.java               稀有度筛选（普通~神话五档的位掩码 + 颜色回退值）
 ├── item/SalvageCardItem.java              分解卡（AE2 UpgradeCardItem）
 ├── menu/MeSalvagerMenu.java               容器菜单（输入 / 过滤 / 升级 / 玩家背包槽）
-├── client/MeSalvagerScreen.java           AE2 风格界面
-├── client/FilterModeButton.java           三态过滤按钮（WHITELIST / BLACKLIST 图标）
+├── client/MeSalvagerScreen.java           AE2 风格界面（过滤按钮进 addToLeftToolbar 左侧工具栏，升级卡进 UpgradesPanel 右侧面板）
+├── client/FilterModeButton.java           三态过滤按钮（WHITELIST / BLACKLIST 图标，走 AE2 工具栏）
 ├── client/RarityFilterWidget.java         5 个稀有度图标（物品图标 = 该稀有度拆出的材料；点击 = 客户端动作，掩码同步回来）
 ├── registry/                              方块 / 物品 / 方块实体 / 菜单 / 创造标签页注册
 └── dev/                                   开发者自检（仅系统属性开启时生效）
@@ -117,7 +117,7 @@ src/main/resources/
 | 稀有度筛选的五档与配色 | `RarityFilter.TIERS`（顺序 = 位掩码位序）/ `FALLBACK_COLORS`；图标直接取 `LootRarity#getMaterial()`（即 神秘废金属~神铸珍珠 那套材料），数据包改了材料会自动跟着变 |
 | 界面里那排图标的位置 | `assets/ae2/screens/me_salvager.json` 的 `rarityFilter` 条目：每格 18×18、间隔 1，5 格共 94 px，放在过滤列表标题（约到 x=46）与右上角模式按钮（152,16）之间，所以起点是 (52,16) |
 | 黑白名单与稀有度的组合规则 | `MeSalvagerBlockEntity.isAllowedByFilter`（白名单要求两部分都通过，黑名单命中任一即拦；任一部分为空 = 该部分不限制） |
-| 输入 / 过滤 / 升级槽数量 | `MeSalvagerBlockEntity.INPUT_SLOTS` / `FILTER_SLOTS` / `UPGRADE_SLOTS`（**注意**：改槽数还要同步改 `assets/ae2/screens/me_salvager.json` 里的槽位坐标与贴图 `textures/guis/me_salvager.png`） |
+| 输入 / 过滤 / 升级槽数量 | `MeSalvagerBlockEntity.INPUT_SLOTS` / `FILTER_SLOTS` / `UPGRADE_SLOTS`（**注意**：改槽数还要同步改 `assets/ae2/screens/me_salvager.json` 里的槽位坐标与贴图 `textures/guis/me_salvager.png`；升级槽的位置由 AE2 的 `UpgradesPanel` 自己算，实测在 176 宽对话框上是 (186,8) 起、竖向排） |
 | 耗电与处理速度 | `POWER_PER_OPERATION`、`IDLE_POWER`、`BASE_TICK_RATE`，以及 `getOperationsPerCycle()` / `getTickingRequest()` |
 | 卡牌上限 | `ModBlocks.MAX_SALVAGE_CARDS` / `MAX_SPEED_CARDS` |
 | 合成配方 | `src/main/resources/data/applied_apotheosis/recipes/*.json` |
@@ -138,6 +138,13 @@ src/main/resources/
   中文会变成乱码写进 `mods.toml`（游戏 Mods 列表里就会显示 `?????¨??????`）。
   中文名放在 `README.md`、语言文件 `lang/zh_cn.json` 和 GUI 文本里即可（那些都是按 UTF-8 读的）。
 - `gradle.properties` 的改动会经 `processResources` 的 `expand` 注入 `mods.toml`，所以改完要重新 `build` 才会进 jar。
+- **AE2 界面样式 JSON 的 `widgets` 里不能塞 `"$comment": "字符串"`**：widget 的值必须是对象，Gson 解析失败会导致
+  整张界面加载不出来；症状是客户端静默不开界面（`minecraft.screen` 为 null、日志里几乎没有报错）。
+  服务端/客户端自检里那句 `GUI did NOT open` 就是为这种情况加的。
+- 升级槽的坐标由 AE2 的 `UpgradesPanel` 自己算（176 宽对话框上实测从 **(186,8)** 起、竖排），
+  JSON 里 `UPGRADE` 的值只是兜底；挪动或增减升级槽后，贴图 `textures/guis/me_salvager.png` 里烘死的槽位底纹要跟着改。
+- 界面贴图是烘焙式的：槽位底纹（`#8B8B8B` + `#373737` 边）直接画在 `me_salvager.png` 上，AE2 不会另外画槽底。
+  用 Java2D 从空白面板处复制一块盖掉旧槽位即可（面板底色 `#C6C6C6`）。
 
 ## 许可与第三方声明
 

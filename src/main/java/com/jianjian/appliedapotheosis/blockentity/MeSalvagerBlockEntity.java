@@ -476,8 +476,13 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
         return isEnabled() && (!this.output.isEmpty() || this.findSalvageableSlot() >= 0);
     }
 
-    private boolean isEnabled() {
+    /** Whether a salvage card is installed, i.e. whether the machine will do anything at all. */
+    public boolean isSalvageCardInstalled() {
         return this.upgrades.isInstalled(ModItems.SALVAGE_CARD.get());
+    }
+
+    private boolean isEnabled() {
+        return isSalvageCardInstalled();
     }
 
     private int speedCards() {

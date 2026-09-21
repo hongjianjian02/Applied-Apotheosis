@@ -16,9 +16,9 @@
       "grid": "BREAK_AFTER_9COLS"
     },
     "UPGRADE": {
-      "left": 8,
-      "top": 108,
-      "grid": "HORIZONTAL"
+      "left": 186,
+      "top": 8,
+      "grid": "VERTICAL"
     }
   },
   "text": {
@@ -49,21 +49,17 @@
         "top": 58
       }
     },
-    "upgradeLabel": {
+    "status": {
       "text": {
-        "translate": "gui.applied_apotheosis.upgrades"
+        "translate": "gui.applied_apotheosis.status.idle"
       },
       "position": {
         "left": 8,
-        "top": 94
+        "top": 103
       }
     }
   },
   "widgets": {
-    "filterMode": {
-      "left": 152,
-      "top": 16
-    },
     "rarityFilter": {
       "left": 52,
       "top": 16

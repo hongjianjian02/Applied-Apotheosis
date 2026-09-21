@@ -4,6 +4,7 @@ import com.jianjian.appliedapotheosis.AppliedApotheosis;
 import com.jianjian.appliedapotheosis.blockentity.MeSalvagerBlockEntity;
 import com.jianjian.appliedapotheosis.filter.FilterMode;
 import com.jianjian.appliedapotheosis.filter.RarityFilter;
+import com.jianjian.appliedapotheosis.menu.MeSalvagerMenu;
 import com.jianjian.appliedapotheosis.registry.ModBlocks;
 import com.jianjian.appliedapotheosis.registry.ModItems;
 import com.jianjian.appliedapotheosis.registry.ModMenus;
@@ -12,6 +13,7 @@ import appeng.blockentity.storage.ChestBlockEntity;
 import appeng.core.definitions.AEBlocks;
 import appeng.core.definitions.AEItems;
 import appeng.menu.MenuOpener;
+import appeng.menu.SlotSemantics;
 import appeng.menu.locator.MenuLocators;
 import dev.shadowsoffire.apotheosis.Apotheosis;
 import dev.shadowsoffire.apotheosis.adventure.loot.LootController;
@@ -69,6 +71,9 @@ public final class ClientSelfTest {
                 }
             }
             case 1 -> {
+                if (ticks == 20) {
+                    logGuiLayout(minecraft);
+                }
                 if (ticks % 20 == 0) {
                     log("tick {}: current screen = {}", ticks, minecraft.screen);
                 }
@@ -152,5 +157,23 @@ public final class ClientSelfTest {
 
     private static void log(String message, Object... args) {
         AppliedApotheosis.LOGGER.info("[clientselftest] " + message, args);
+    }
+
+    /** Reports where AE2 ended up placing the slots and widgets, to check the layout from the log. */
+    private static void logGuiLayout(Minecraft minecraft) {
+        if (!(minecraft.player.containerMenu instanceof MeSalvagerMenu menu)) {
+            // A screen style that fails to load leaves the client without our screen - make that loud.
+            AppliedApotheosis.LOGGER.error("[clientselftest] GUI did NOT open, menu is {} and screen is {}",
+                    minecraft.player.containerMenu, minecraft.screen);
+            return;
+        }
+
+        var upgrades = menu.getSlots(SlotSemantics.UPGRADE);
+        log("GUI layout: {} upgrade slot(s), first at {} / {} | screen = {} x {}",
+                upgrades.size(), upgrades.get(0).x, upgrades.get(0).y,
+                minecraft.screen.width, minecraft.screen.height);
+        log("GUI layout: filter slots at {} / {}",
+                menu.getSlots(SlotSemantics.CONFIG).get(0).x,
+                menu.getSlots(SlotSemantics.CONFIG).get(0).y);
     }
 }
