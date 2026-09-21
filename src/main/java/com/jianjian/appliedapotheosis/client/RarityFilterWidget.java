@@ -15,24 +15,29 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 
 /**
- * The row of five rarity chips (普通 → 神话) that sits next to the filter label. Every chip is a plain
- * coloured square: lit when the tier belongs to the filter, dark when it does not. What "belongs to
- * the filter" means depends on the mode - a whitelist salvages exactly the ticked tiers, a blacklist
- * never salvages them.
+ * The row of five rarity chips (普通 → 神话) that sits next to the filter label. Every chip shows the
+ * material that rarity salvages into - 神秘废金属 / 陈旧布匹 / 发光水晶碎片 / 玄奥沙 / 神铸珍珠 - on a
+ * backdrop in that rarity's colour: lit when the tier belongs to the filter, darkened when it does
+ * not. What "belongs to the filter" means depends on the mode - a whitelist salvages exactly the
+ * ticked tiers, a blacklist never salvages them.
  * <p>
  * Clicking a chip hands its index to the menu, which forwards it to the server; the resulting mask
  * comes back through the synced field.
  */
 public class RarityFilterWidget extends AbstractWidget implements ITooltip {
-    private static final int CHIP = 16;
-    private static final int GAP = 2;
+    private static final int CHIP = 18;
+    private static final int GAP = 1;
     /** Chip backdrop, used for the unticked state. */
     private static final int BACKDROP = 0xFF10151C;
+    /** Dimming overlay drawn over the icon of an unticked chip. */
+    private static final int DIMMED = 0xA0000000;
 
     private final MeSalvagerMenu menu;
     private final int[] colors = new int[RarityFilter.size()];
+    private final ItemStack[] icons = new ItemStack[RarityFilter.size()];
     private int mask = RarityFilter.NONE;
 
     public RarityFilterWidget(MeSalvagerMenu menu) {
@@ -41,6 +46,7 @@ public class RarityFilterWidget extends AbstractWidget implements ITooltip {
         this.menu = menu;
         for (int i = 0; i < this.colors.length; i++) {
             this.colors[i] = resolveColor(i);
+            this.icons[i] = resolveIcon(i);
         }
     }
 
@@ -54,6 +60,21 @@ public class RarityFilterWidget extends AbstractWidget implements ITooltip {
             }
         }
         return RarityFilter.fallbackColor(index);
+    }
+
+    /**
+     * The item a rarity salvages into - the same material series the wiki chart shows. Read from the
+     * rarity data, so a datapack that repoints a material is followed automatically.
+     */
+    private static ItemStack resolveIcon(int index) {
+        var holder = RarityRegistry.INSTANCE.holder(RarityFilter.TIERS.get(index));
+        if (holder.isBound()) {
+            var material = holder.get().getMaterial();
+            if (material != null) {
+                return new ItemStack(material);
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     public void setMask(int mask) {
@@ -72,6 +93,18 @@ public class RarityFilterWidget extends AbstractWidget implements ITooltip {
             if (ticked) {
                 g.fill(x + 1, y + 1, x + CHIP - 1, y + CHIP - 1, withAlpha(color, 0x66));
             }
+
+            var icon = this.icons[i];
+            if (!icon.isEmpty()) {
+                g.renderItem(icon, x + 1, y + 1);
+                if (!ticked) {
+                    g.fill(x + 1, y + 1, x + CHIP - 1, y + CHIP - 1, DIMMED);
+                }
+            } else if (ticked) {
+                // Rarity data not loaded yet: fall back to a plain swatch.
+                g.fill(x + 3, y + 3, x + CHIP - 3, y + CHIP - 3, withAlpha(color, 0xFF));
+            }
+
             g.renderOutline(x, y, CHIP, CHIP, withAlpha(color, ticked ? 0xFF : 0x55));
 
             if (isHovered() && mouseX >= x && mouseX < x + CHIP && mouseY >= y && mouseY < y + CHIP) {

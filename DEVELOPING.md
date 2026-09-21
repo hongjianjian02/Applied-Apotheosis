@@ -97,7 +97,7 @@ src/main/java/com/jianjian/appliedapotheosis/
 ├── menu/MeSalvagerMenu.java               容器菜单（输入 / 过滤 / 升级 / 玩家背包槽）
 ├── client/MeSalvagerScreen.java           AE2 风格界面
 ├── client/FilterModeButton.java           三态过滤按钮（WHITELIST / BLACKLIST 图标）
-├── client/RarityFilterWidget.java         5 个稀有度方块（点击 = 客户端动作，掩码同步回来）
+├── client/RarityFilterWidget.java         5 个稀有度图标（物品图标 = 该稀有度拆出的材料；点击 = 客户端动作，掩码同步回来）
 ├── registry/                              方块 / 物品 / 方块实体 / 菜单 / 创造标签页注册
 └── dev/                                   开发者自检（仅系统属性开启时生效）
 src/main/resources/
@@ -114,7 +114,8 @@ src/main/resources/
 | 稀有度门槛（现在 = 全部收） | `MeSalvagerBlockEntity.MINIMUM_RARITY`（`apotheosis:common`；改成 `mythic` 即只收神话及以上） |
 | 接受什么（词缀装备 / 宝石） | `MeSalvagerBlockEntity.isApotheosisLoot`（词缀列表 or `GemItem.getGem(stack).isBound()`）与 `hasRequiredRarity` / `isAccepted` |
 | 哪些物品会被跳过 | `findSalvageableSlot()`：稀有度合格但神化没有拆解配方的（远古装备）直接跳过，不堵住队列 |
-| 稀有度筛选的五档与配色 | `RarityFilter.TIERS`（顺序 = 位掩码位序）/ `FALLBACK_COLORS`；界面里那排方块的位置在 `assets/ae2/screens/me_salvager.json` 的 `rarityFilter` 条目（左边 `filterMode` 按钮占 152,16，方块行从 60,18 起，共 5×16+4×2=88 px） |
+| 稀有度筛选的五档与配色 | `RarityFilter.TIERS`（顺序 = 位掩码位序）/ `FALLBACK_COLORS`；图标直接取 `LootRarity#getMaterial()`（即 神秘废金属~神铸珍珠 那套材料），数据包改了材料会自动跟着变 |
+| 界面里那排图标的位置 | `assets/ae2/screens/me_salvager.json` 的 `rarityFilter` 条目：每格 18×18、间隔 1，5 格共 94 px，放在过滤列表标题（约到 x=46）与右上角模式按钮（152,16）之间，所以起点是 (52,16) |
 | 黑白名单与稀有度的组合规则 | `MeSalvagerBlockEntity.isAllowedByFilter`（白名单要求两部分都通过，黑名单命中任一即拦；任一部分为空 = 该部分不限制） |
 | 输入 / 过滤 / 升级槽数量 | `MeSalvagerBlockEntity.INPUT_SLOTS` / `FILTER_SLOTS` / `UPGRADE_SLOTS`（**注意**：改槽数还要同步改 `assets/ae2/screens/me_salvager.json` 里的槽位坐标与贴图 `textures/guis/me_salvager.png`） |
 | 耗电与处理速度 | `POWER_PER_OPERATION`、`IDLE_POWER`、`BASE_TICK_RATE`，以及 `getOperationsPerCycle()` / `getTickingRequest()` |
