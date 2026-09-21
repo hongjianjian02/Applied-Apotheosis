@@ -2,11 +2,20 @@ name: Release
 
 # 打 tag（形如 v1.0.0）时自动构建，并把 mod jar 挂到 GitHub Release 上。
 # 也可以在 GitHub 网页上「Create a new release」里新建 tag，本工作流会把 jar 补传上去。
+#
+# ⚠️ 手动运行（workflow_dispatch）时必须填一个**已存在的版本 tag**：早期版本会直接拿
+# github.ref_name 当 tag 名，于是「在 main 分支上手动跑一次」就凭空造出一个名为 main 的
+# tag，之后 git push origin main 会报 "src refspec main matches more than one"。
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: '要发布的 tag（形如 v1.0.0，需已存在）。分支名会被拒绝。'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -31,14 +40,34 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
+      # 只接受 v 开头的版本 tag，避免把分支名（main 等）做成 tag
+      - name: Resolve the tag to publish
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          case "$TAG" in
+            v[0-9]*) ;;
+            *)
+              echo "::error::'$TAG' 不是版本 tag（要形如 v1.0.0）。手动运行请填一个已有的 tag；分支名一律拒绝，否则会造出同名 tag 让 git push 报 'src refspec ... matches more than one'。"
+              exit 1
+              ;;
+          esac
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "publishing ${TAG}"
+
       # 防止 tag 与 gradle.properties 里的 mod_version 不一致
       - name: Check tag matches mod_version
-        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
           VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2 | tr -d ' \r')
-          echo "tag=${GITHUB_REF_NAME}  mod_version=v${VERSION}"
-          if [ "v${VERSION}" != "${GITHUB_REF_NAME}" ]; then
-            echo "::error::tag ${GITHUB_REF_NAME} 与 gradle.properties 的 mod_version=v${VERSION} 不一致"
+          echo "tag=${TAG}  mod_version=v${VERSION}"
+          if [ "v${VERSION}" != "${TAG}" ]; then
+            echo "::error::tag ${TAG} 与 gradle.properties 的 mod_version=v${VERSION} 不一致"
             exit 1
           fi
 
@@ -51,12 +80,8 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          if [ -z "${TAG}" ]; then
-            echo "::error::workflow_dispatch 运行时请指定一个 tag 引用（ref）"
-            exit 1
-          fi
           gh release view "${TAG}" >/dev/null 2>&1 || \
             gh release create "${TAG}" --title "${TAG}" --generate-notes
           gh release upload "${TAG}" build/libs/*.jar --clobber
