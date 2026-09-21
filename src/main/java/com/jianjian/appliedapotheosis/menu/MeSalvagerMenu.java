@@ -7,13 +7,16 @@ import com.jianjian.appliedapotheosis.filter.FilterMode;
 import com.jianjian.appliedapotheosis.filter.RarityFilter;
 import com.jianjian.appliedapotheosis.registry.ModMenus;
 
+import appeng.api.inventories.InternalInventory;
 import appeng.menu.AEBaseMenu;
 import appeng.menu.SlotSemantics;
 import appeng.menu.guisync.GuiSync;
 import appeng.menu.slot.AppEngSlot;
+import appeng.menu.slot.FakeSlot;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * GUI of the ME Salvager: the input buffer, the blacklist/whitelist entries and the upgrade cards.
@@ -53,7 +56,10 @@ public class MeSalvagerMenu extends AEBaseMenu {
 
         var filter = host.getFilterInventory();
         for (int i = 0; i < MeSalvagerBlockEntity.FILTER_SLOTS; i++) {
-            var slot = new AppEngSlot(filter, i);
+            // A fake ("ghost") slot: clicking with an item, or dragging one in from JEI, only marks
+            // the entry - the item itself is never taken. AE2's JEI plugin handles the drag part and
+            // calls canSetFilterTo, which we narrow down to Apotheosis loot.
+            var slot = new SalvageableFakeSlot(filter, i);
             slot.setEmptyTooltip(MeSalvagerMenu::acceptedItemsTooltip);
             addSlot(slot, SlotSemantics.CONFIG);
         }
@@ -115,5 +121,22 @@ public class MeSalvagerMenu extends AEBaseMenu {
             this.hasCard = this.host.isSalvageCardInstalled();
         }
         super.broadcastChanges();
+    }
+
+    /**
+     * Filter entries are markers, not real items: the slot refuses normal placement and only accepts
+     * Apotheosis loot as a marker, so marking something never costs the player the item.
+     * <p>
+     * Public so the developer self-test can exercise the marker rules without a player.
+     */
+    public static class SalvageableFakeSlot extends FakeSlot {
+        public SalvageableFakeSlot(InternalInventory inventory, int slot) {
+            super(inventory, slot);
+        }
+
+        @Override
+        public boolean canSetFilterTo(ItemStack stack) {
+            return MeSalvagerBlockEntity.hasRequiredRarity(stack) && super.canSetFilterTo(stack);
+        }
     }
 }

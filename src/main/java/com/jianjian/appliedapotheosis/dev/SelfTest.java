@@ -4,6 +4,7 @@ import com.jianjian.appliedapotheosis.AppliedApotheosis;
 import com.jianjian.appliedapotheosis.blockentity.MeSalvagerBlockEntity;
 import com.jianjian.appliedapotheosis.filter.FilterMode;
 import com.jianjian.appliedapotheosis.filter.RarityFilter;
+import com.jianjian.appliedapotheosis.menu.MeSalvagerMenu;
 import com.jianjian.appliedapotheosis.registry.ModBlockEntities;
 import com.jianjian.appliedapotheosis.registry.ModBlocks;
 import com.jianjian.appliedapotheosis.registry.ModItems;
@@ -235,6 +236,20 @@ public final class SelfTest {
         log("WHITELIST + nothing ticked + empty list -> common gear leftover = {} (0 = no restriction)",
                 salvager.insertForSalvaging(commonGear.copy()).getCount());
         salvager.getInternalInventory().clear();
+
+        // --- filter entries are ghost markers: marking with an item never takes the item ---
+        var markerSlot = new MeSalvagerMenu.SalvageableFakeSlot(salvager.getFilterInventory(), 0);
+        log("filter slot = {} | normal placement allowed = {} (false = can never consume an item)",
+                markerSlot.getClass().getSimpleName(), markerSlot.mayPlace(rolledGear.copy()));
+        log("marker rules: affix gear = {} (true) | plain diamond = {} (false)",
+                markerSlot.canSetFilterTo(rolledGear.copy()),
+                markerSlot.canSetFilterTo(new ItemStack(Items.DIAMOND)));
+
+        var carried = rolledGear.copy();
+        markerSlot.set(carried);
+        log("after marking: filter holds {} (1 x marker) | carried stack is still {} (not consumed)",
+                salvager.getFilterInventory().getStackInSlot(0), carried);
+        salvager.getFilterInventory().clear();
 
         salvager.setFilterMode(FilterMode.DISABLED);
     }

@@ -374,11 +374,7 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
                 drops.add(stack);
             }
         }
-        for (var stack : this.filter) {
-            if (!stack.isEmpty()) {
-                drops.add(stack);
-            }
-        }
+        // The filter entries are markers, not items the player ever paid for, so they are not dropped.
     }
 
     @Override
