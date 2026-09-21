@@ -33,3 +33,4 @@ forge*changelog.txt
 
 # Transient build/test logs produced by the dev self-tests
 *.log
+/art
