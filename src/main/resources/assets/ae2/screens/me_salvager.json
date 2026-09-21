@@ -63,6 +63,10 @@
     "filterMode": {
       "left": 152,
       "top": 16
+    },
+    "rarityFilter": {
+      "left": 60,
+      "top": 18
     }
   }
 }

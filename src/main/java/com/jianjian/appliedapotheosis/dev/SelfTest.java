@@ -3,6 +3,7 @@ package com.jianjian.appliedapotheosis.dev;
 import com.jianjian.appliedapotheosis.AppliedApotheosis;
 import com.jianjian.appliedapotheosis.blockentity.MeSalvagerBlockEntity;
 import com.jianjian.appliedapotheosis.filter.FilterMode;
+import com.jianjian.appliedapotheosis.filter.RarityFilter;
 import com.jianjian.appliedapotheosis.registry.ModBlockEntities;
 import com.jianjian.appliedapotheosis.registry.ModBlocks;
 import com.jianjian.appliedapotheosis.registry.ModItems;
@@ -206,6 +207,35 @@ public final class SelfTest {
                 salvager.insertForSalvaging(otherGear.copy()).getCount());
 
         salvager.getInternalInventory().clear();
+        salvager.setFilterMode(FilterMode.DISABLED);
+
+        // --- rarity filter row: 普通 / 罕见 / 稀有 / 史诗 / 神话 ---
+        salvager.getFilterInventory().clear();
+        int mythicBit = 1 << RarityFilter.indexOf(Apotheosis.loc("mythic"));
+
+        salvager.setFilterMode(FilterMode.WHITELIST);
+        salvager.setRarityFilter(mythicBit);
+        log("WHITELIST + only mythic ticked -> mythic gear leftover = {} (0 = correctly accepted)",
+                salvager.insertForSalvaging(rolledGear.copy()).getCount());
+        log("WHITELIST + only mythic ticked -> epic gear leftover = {} (1 = correctly blocked)",
+                salvager.insertForSalvaging(epicGear.copy()).getCount());
+        log("WHITELIST + only mythic ticked -> common gear leftover = {} (1 = correctly blocked)",
+                salvager.insertForSalvaging(commonGear.copy()).getCount());
+        salvager.getInternalInventory().clear();
+
+        salvager.setFilterMode(FilterMode.BLACKLIST);
+        log("BLACKLIST + mythic ticked -> mythic gear leftover = {} (1 = correctly blocked)",
+                salvager.insertForSalvaging(rolledGear.copy()).getCount());
+        log("BLACKLIST + mythic ticked -> common gear leftover = {} (0 = correctly accepted)",
+                salvager.insertForSalvaging(commonGear.copy()).getCount());
+        salvager.getInternalInventory().clear();
+
+        // Ticking nothing is not a restriction, so old machines keep behaving the same.
+        salvager.setRarityFilter(RarityFilter.NONE);
+        log("WHITELIST + nothing ticked + empty list -> common gear leftover = {} (0 = no restriction)",
+                salvager.insertForSalvaging(commonGear.copy()).getCount());
+        salvager.getInternalInventory().clear();
+
         salvager.setFilterMode(FilterMode.DISABLED);
     }
 

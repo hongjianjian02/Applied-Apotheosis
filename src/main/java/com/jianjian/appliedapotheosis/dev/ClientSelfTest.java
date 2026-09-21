@@ -3,6 +3,7 @@ package com.jianjian.appliedapotheosis.dev;
 import com.jianjian.appliedapotheosis.AppliedApotheosis;
 import com.jianjian.appliedapotheosis.blockentity.MeSalvagerBlockEntity;
 import com.jianjian.appliedapotheosis.filter.FilterMode;
+import com.jianjian.appliedapotheosis.filter.RarityFilter;
 import com.jianjian.appliedapotheosis.registry.ModBlocks;
 import com.jianjian.appliedapotheosis.registry.ModItems;
 import com.jianjian.appliedapotheosis.registry.ModMenus;
@@ -125,10 +126,15 @@ public final class ClientSelfTest {
                 machine.getFilterInventory().setItemDirect(1, helmet.copyWithCount(1));
                 machine.getFilterInventory().setItemDirect(2, bow.copyWithCount(1));
                 machine.insertForSalvaging(chestplate);
+                // Tick a few rarity chips so the screenshot shows both states of the row.
+                machine.setRarityFilter(1 << RarityFilter.indexOf(Apotheosis.loc("rare"))
+                        | 1 << RarityFilter.indexOf(Apotheosis.loc("epic"))
+                        | 1 << RarityFilter.indexOf(Apotheosis.loc("mythic")));
                 log("filter list holds {} / {} / {}",
                         machine.getFilterInventory().getStackInSlot(0),
                         machine.getFilterInventory().getStackInSlot(1),
                         machine.getFilterInventory().getStackInSlot(2));
+                log("rarity filter mask = 0b{}", Integer.toBinaryString(machine.getRarityFilter()));
 
                 log("world prepared at {}, opening GUI", machinePos);
                 log("menu type = {} | block entity = {}",

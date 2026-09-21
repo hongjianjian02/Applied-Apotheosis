@@ -13,8 +13,15 @@
   "gui.applied_apotheosis.filter.whitelist": "白名单",
   "gui.applied_apotheosis.filter.blacklist": "黑名单",
   "gui.applied_apotheosis.filter.disabled.tooltip": "所有神化词缀装备与宝石都会被分解",
-  "gui.applied_apotheosis.filter.whitelist.tooltip": "只分解下方列表中列出的物品",
-  "gui.applied_apotheosis.filter.blacklist.tooltip": "下方列表中列出的物品永不分解",
+  "gui.applied_apotheosis.filter.whitelist.tooltip": "只分解下方列表里的物品种类，以及勾选的稀有度",
+  "gui.applied_apotheosis.filter.blacklist.tooltip": "下方列表里的物品种类与勾选的稀有度永不分解",
+  "gui.applied_apotheosis.rarity_filter": "稀有度筛选",
+  "gui.applied_apotheosis.rarity_filter.hint": "白名单：只拆勾选的稀有度；黑名单：勾选的稀有度永不拆。一个都不勾 = 不限制稀有度",
+  "gui.applied_apotheosis.rarity.common": "普通",
+  "gui.applied_apotheosis.rarity.uncommon": "罕见",
+  "gui.applied_apotheosis.rarity.rare": "稀有",
+  "gui.applied_apotheosis.rarity.epic": "史诗",
+  "gui.applied_apotheosis.rarity.mythic": "神话",
   "gui.applied_apotheosis.affix_only": "只接受神化词缀装备与宝石",
   "gui.applied_apotheosis.no_card": "未安装分解卡"
 }

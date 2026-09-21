@@ -13,8 +13,15 @@
   "gui.applied_apotheosis.filter.whitelist": "Whitelist",
   "gui.applied_apotheosis.filter.blacklist": "Blacklist",
   "gui.applied_apotheosis.filter.disabled.tooltip": "Every Apotheosis affix item and gem is salvaged",
-  "gui.applied_apotheosis.filter.whitelist.tooltip": "Only items listed below are salvaged",
-  "gui.applied_apotheosis.filter.blacklist.tooltip": "Listed items are never salvaged",
+  "gui.applied_apotheosis.filter.whitelist.tooltip": "Only listed item types and ticked rarities are salvaged",
+  "gui.applied_apotheosis.filter.blacklist.tooltip": "Listed item types and ticked rarities are never salvaged",
+  "gui.applied_apotheosis.rarity_filter": "Rarity filter",
+  "gui.applied_apotheosis.rarity_filter.hint": "Whitelist: only ticked rarities are salvaged. Blacklist: ticked rarities are never salvaged. Nothing ticked = no rarity restriction",
+  "gui.applied_apotheosis.rarity.common": "Common",
+  "gui.applied_apotheosis.rarity.uncommon": "Uncommon",
+  "gui.applied_apotheosis.rarity.rare": "Rare",
+  "gui.applied_apotheosis.rarity.epic": "Epic",
+  "gui.applied_apotheosis.rarity.mythic": "Mythic",
   "gui.applied_apotheosis.affix_only": "Accepts Apotheosis affix equipment and gems",
   "gui.applied_apotheosis.no_card": "No salvage card installed"
 }

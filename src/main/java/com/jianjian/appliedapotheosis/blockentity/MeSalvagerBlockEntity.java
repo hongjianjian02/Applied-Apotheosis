@@ -5,6 +5,7 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.jianjian.appliedapotheosis.filter.FilterMode;
+import com.jianjian.appliedapotheosis.filter.RarityFilter;
 import com.jianjian.appliedapotheosis.registry.ModItems;
 
 import appeng.api.config.Actionable;
@@ -90,6 +91,12 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
 
     /** Blacklist / whitelist behaviour, configured through the GUI. */
     private FilterMode filterMode = FilterMode.DISABLED;
+
+    /**
+     * The rarity tiers the filter refers to, as a bit mask over {@link RarityFilter#TIERS}.
+     * {@link RarityFilter#NONE} means the rarity selection is not a restriction at all.
+     */
+    private int rarityFilter = RarityFilter.NONE;
 
     /** Synced to the client for the "active" block state. */
     private boolean active;
@@ -196,13 +203,81 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
         }
     }
 
-    /** Whether the configured blacklist/whitelist allows the given item to be processed. */
+    /** The rarity tiers the filter refers to, as a bit mask (see {@link RarityFilter}). */
+    public int getRarityFilter() {
+        return this.rarityFilter;
+    }
+
+    /** Replaces the rarity selection wholesale; mainly useful for tests and commands. */
+    public void setRarityFilter(int mask) {
+        int clamped = RarityFilter.clamp(mask);
+        if (this.rarityFilter != clamped) {
+            this.rarityFilter = clamped;
+            this.saveChanges();
+            this.getMainNode().ifPresent((grid, node) -> grid.getTickManager().wakeDevice(node));
+        }
+    }
+
+    /**
+     * Ticks or unticks a single rarity tier of the filter. Items already buffered are re-evaluated
+     * automatically, because the filter runs again on every salvage attempt.
+     */
+    public void toggleRarityFilter(int index) {
+        setRarityFilter(RarityFilter.toggle(this.rarityFilter, index));
+    }
+
+    /**
+     * Whether the configured blacklist/whitelist allows the given item to be processed.
+     * <p>
+     * The filter has two parts: the rarity tiers ticked in the GUI, and the item types in the filter
+     * slots. Either part being empty means it is not a restriction, so a machine that only ever used
+     * the item list keeps working as before. In whitelist mode an item has to pass both parts, in
+     * blacklist mode either part is enough to block it.
+     */
     public boolean isAllowedByFilter(ItemStack stack) {
+        boolean rarityTicked = matchesRarityFilter(stack);
+        boolean itemListed = matchesItemFilter(stack);
+
         return switch (this.filterMode) {
             case DISABLED -> true;
-            case WHITELIST -> matchesFilter(stack);
-            case BLACKLIST -> !matchesFilter(stack);
+            case WHITELIST -> (this.rarityFilter == RarityFilter.NONE || rarityTicked)
+                    && (isItemFilterEmpty() || itemListed);
+            case BLACKLIST -> !rarityTicked && !itemListed;
         };
+    }
+
+    /** Whether the stack's rarity is one of the tiers ticked next to the filter label. */
+    public boolean matchesRarityFilter(ItemStack stack) {
+        if (this.rarityFilter == RarityFilter.NONE) {
+            return false;
+        }
+
+        var rarity = AffixHelper.getRarity(stack);
+        if (!rarity.isBound()) {
+            return false;
+        }
+
+        return RarityFilter.isTicked(this.rarityFilter, RarityFilter.indexOf(rarity.getId()));
+    }
+
+    /** Whether any slot of the filter list holds an entry. */
+    public boolean isItemFilterEmpty() {
+        for (int slot = 0; slot < this.filter.size(); slot++) {
+            if (!this.filter.getStackInSlot(slot).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean matchesItemFilter(ItemStack stack) {
+        for (int slot = 0; slot < this.filter.size(); slot++) {
+            var entry = this.filter.getStackInSlot(slot);
+            if (!entry.isEmpty() && ItemStack.isSameItem(entry, stack)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -240,16 +315,6 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
         return hasRequiredRarity(stack) && isAllowedByFilter(stack);
     }
 
-    private boolean matchesFilter(ItemStack stack) {
-        for (int slot = 0; slot < this.filter.size(); slot++) {
-            var entry = this.filter.getStackInSlot(slot);
-            if (!entry.isEmpty() && ItemStack.isSameItem(entry, stack)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     // ------------------------------------------------------------------
     // Persistence
     // ------------------------------------------------------------------
@@ -259,6 +324,7 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
         super.saveAdditional(data); // saves the input inventory
         this.upgrades.writeToNBT(data, "upgrades");
         data.putString("filterMode", this.filterMode.name());
+        data.putInt("rarityFilter", this.rarityFilter);
 
         var outputTag = new CompoundTag();
         for (int i = 0; i < this.output.size(); i++) {
@@ -284,6 +350,7 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
         super.loadTag(data); // loads the input inventory
         this.upgrades.readFromNBT(data, "upgrades");
         this.filterMode = FilterMode.byName(data.getString("filterMode"));
+        this.rarityFilter = RarityFilter.clamp(data.getInt("rarityFilter"));
 
         var outputTag = data.getCompound("output");
         for (int i = 0; i < this.output.size(); i++) {

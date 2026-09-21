@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.jianjian.appliedapotheosis.blockentity.MeSalvagerBlockEntity;
 import com.jianjian.appliedapotheosis.filter.FilterMode;
+import com.jianjian.appliedapotheosis.filter.RarityFilter;
 import com.jianjian.appliedapotheosis.registry.ModMenus;
 
 import appeng.menu.AEBaseMenu;
@@ -17,17 +18,23 @@ import net.minecraft.world.entity.player.Inventory;
 /**
  * GUI of the ME Salvager: the input buffer, the blacklist/whitelist entries and the upgrade cards.
  * <p>
- * The filter mode is cycled by a GUI button. The click travels to the server as a client action, and
- * the resulting value comes back through the {@link GuiSync} field.
+ * The filter mode is cycled by a GUI button, the rarity tiers are ticked in the chip row next to it.
+ * Both travel to the server as client actions, and the resulting values come back through the
+ * {@link GuiSync} fields.
  */
 public class MeSalvagerMenu extends AEBaseMenu {
     private static final String ACTION_CYCLE_FILTER = "cycleFilterMode";
+    private static final String ACTION_TOGGLE_RARITY = "toggleRarityFilter";
 
     private final MeSalvagerBlockEntity host;
 
     /** Mirrors {@link MeSalvagerBlockEntity#getFilterMode()} on the client. */
     @GuiSync(10)
     public FilterMode filterMode = FilterMode.DISABLED;
+
+    /** Mirrors {@link MeSalvagerBlockEntity#getRarityFilter()} on the client. */
+    @GuiSync(11)
+    public int rarityFilter = RarityFilter.NONE;
 
     public MeSalvagerMenu(int id, Inventory playerInventory, MeSalvagerBlockEntity host) {
         super(ModMenus.ME_SALVAGER.get(), id, playerInventory, host);
@@ -55,6 +62,7 @@ public class MeSalvagerMenu extends AEBaseMenu {
         createPlayerInventorySlots(playerInventory);
 
         registerClientAction(ACTION_CYCLE_FILTER, this::cycleFilterMode);
+        registerClientAction(ACTION_TOGGLE_RARITY, Integer.class, this::toggleRarityFilter);
     }
 
     public MeSalvagerBlockEntity getHost() {
@@ -81,10 +89,25 @@ public class MeSalvagerMenu extends AEBaseMenu {
         this.filterMode = next;
     }
 
+    /**
+     * Ticks/unticked one rarity tier of the filter: on the client this asks the server to do it, on
+     * the server it actually happens.
+     */
+    public void toggleRarityFilter(int index) {
+        if (isClientSide()) {
+            sendClientAction(ACTION_TOGGLE_RARITY, index);
+            return;
+        }
+
+        this.host.toggleRarityFilter(index);
+        this.rarityFilter = this.host.getRarityFilter();
+    }
+
     @Override
     public void broadcastChanges() {
         if (isServerSide()) {
             this.filterMode = this.host.getFilterMode();
+            this.rarityFilter = this.host.getRarityFilter();
         }
         super.broadcastChanges();
     }
