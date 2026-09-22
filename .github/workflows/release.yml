@@ -68,7 +68,7 @@ jobs:
           VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2 | tr -d ' \r')
           echo "tag=${TAG}  mod_version=v${VERSION}"
           if [ "v${VERSION}" != "${TAG}" ]; then
-            echo "::error::tag ${TAG} 与 gradle.properties 的 mod_version=v${VERSION} 不一致"
+            echo "::error::tag ${TAG} 指向的提交里 mod_version=v${VERSION}，两者不一致——说明 tag 打在了"还没提交版本号"的那个提交上。修法：先把提交版本号的 commit 推上去，再把 tag 挪过来：git push origin main && git push origin :refs/tags/${TAG} && git tag -a ${TAG} -m ${TAG} && git push origin ${TAG}"
             exit 1
           fi
 
