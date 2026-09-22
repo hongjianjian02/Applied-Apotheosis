@@ -25,8 +25,11 @@ public class MeSalvagerScreen extends AEBaseScreen<MeSalvagerMenu> {
     public MeSalvagerScreen(MeSalvagerMenu menu, Inventory playerInventory, Component title, ScreenStyle style) {
         super(menu, playerInventory, title, style);
 
-        // AE2's vertical button bar down the left edge of the screen.
-        this.filterModeButton = addToLeftToolbar(new FilterModeButton(menu::cycleFilterMode));
+        // The blacklist/whitelist button sits inside the panel, right next to the filter label and
+        // the rarity chips, so the whole filter UI is in one place. (AE2 does the same with buttons
+        // like openPriority; a toolbar button outside the panel was too easy to miss.)
+        this.filterModeButton = new FilterModeButton(menu::cycleFilterMode);
+        this.widgets.add("filterMode", this.filterModeButton);
 
         // AE2's upgrade panel, drawn around our upgrade slots on the right edge.
         this.widgets.add("upgrades", new UpgradesPanel(menu.getSlots(SlotSemantics.UPGRADE)));

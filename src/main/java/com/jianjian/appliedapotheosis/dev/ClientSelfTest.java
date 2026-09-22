@@ -213,6 +213,7 @@ public final class ClientSelfTest {
             host.getInternalInventory().clear();
             host.getFilterInventory().clear();
             host.setFilterMode(FilterMode.DISABLED);
+            menu.setCarried(ItemStack.EMPTY);
             log("input click test finished");
         } catch (Throwable t) {
             AppliedApotheosis.LOGGER.error("[clientselftest] slot click test failed", t);

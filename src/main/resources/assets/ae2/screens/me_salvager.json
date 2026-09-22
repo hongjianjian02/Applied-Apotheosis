@@ -57,6 +57,10 @@
     }
   },
   "widgets": {
+    "filterMode": {
+      "left": 52,
+      "top": 16
+    },
     "rarityFilter": {
       "left": 80,
       "top": 16
