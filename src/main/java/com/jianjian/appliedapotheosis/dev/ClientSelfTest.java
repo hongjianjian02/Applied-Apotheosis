@@ -22,6 +22,7 @@ import dev.shadowsoffire.apotheosis.adventure.loot.RarityRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.common.MinecraftForge;
@@ -73,6 +74,9 @@ public final class ClientSelfTest {
             case 1 -> {
                 if (ticks == 20) {
                     logGuiLayout(minecraft);
+                }
+                if (ticks == 30) {
+                    minecraft.getSingleplayerServer().execute(ClientSelfTest::simulateSlotClicks);
                 }
                 if (ticks % 20 == 0) {
                     log("tick {}: current screen = {}", ticks, minecraft.screen);
@@ -156,6 +160,63 @@ public final class ClientSelfTest {
                 AppliedApotheosis.LOGGER.error("[clientselftest] preparing the world failed", t);
             }
         });
+    }
+
+    /**
+     * Server side: drive Minecraft's own click path into the "to salvage" slots, the same way a
+     * player dropping items in would. This is what tells us whether the buffer really refuses items.
+     */
+    private static void simulateSlotClicks() {
+        try {
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            var player = server.getPlayerList().getPlayers().get(0);
+            if (!(player.containerMenu instanceof MeSalvagerMenu menu)) {
+                log("click test skipped, menu is {}", player.containerMenu);
+                return;
+            }
+
+            var host = (MeSalvagerBlockEntity) menu.getHost();
+            var buffer = host.getInternalInventory();
+            var slot = menu.getSlots(SlotSemantics.MACHINE_INPUT).get(0);
+
+            // The GUI was prepared with a blacklist holding a diamond sword; clear it so the plain
+            // case (no filtering) is what gets tested first. Also empty the buffer so the clicks
+            // below are not swaps.
+            host.getFilterInventory().clear();
+            host.getInternalInventory().clear();
+            host.setFilterMode(FilterMode.DISABLED);
+            host.setRarityFilter(RarityFilter.NONE);
+
+            var mythic = RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get();
+            var loot = LootController.createLootItem(new ItemStack(Items.DIAMOND_SWORD), mythic,
+                    server.overworld().getRandom());
+
+            menu.setCarried(loot.copy());
+            menu.clicked(slot.index, 0, ClickType.PICKUP, player);
+            log("click with affix gear, no filter: buffer slot 0 = {} | carried left = {} (want the sword in the buffer)",
+                    buffer.getStackInSlot(0), menu.getCarried());
+
+            menu.setCarried(new ItemStack(Items.DIAMOND, 4));
+            menu.clicked(slot.index + 1, 0, ClickType.PICKUP, player);
+            log("click with plain diamonds: buffer slot 1 = {} (must stay empty) | carried left = {} (must stay 4)",
+                    buffer.getStackInSlot(1), menu.getCarried());
+
+            // now list that sword in a blacklist and click again: the machine must refuse it
+            host.getInternalInventory().clear();
+            host.getFilterInventory().setItemDirect(0, new ItemStack(Items.DIAMOND_SWORD));
+            host.setFilterMode(FilterMode.BLACKLIST);
+            menu.setCarried(loot.copy());
+            menu.clicked(slot.index, 0, ClickType.PICKUP, player);
+            log("click with a blacklisted sword: buffer slot 0 = {} (must stay empty) | carried left = {}",
+                    buffer.getStackInSlot(0), menu.getCarried());
+
+            host.getInternalInventory().clear();
+            host.getFilterInventory().clear();
+            host.setFilterMode(FilterMode.DISABLED);
+            log("input click test finished");
+        } catch (Throwable t) {
+            AppliedApotheosis.LOGGER.error("[clientselftest] slot click test failed", t);
+        }
     }
 
     private static void log(String message, Object... args) {

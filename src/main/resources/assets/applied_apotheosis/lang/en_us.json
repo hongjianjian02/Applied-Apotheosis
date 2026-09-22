@@ -22,6 +22,10 @@
   "gui.applied_apotheosis.rarity.epic": "Epic",
   "gui.applied_apotheosis.rarity.mythic": "Mythic",
   "gui.applied_apotheosis.affix_only": "Accepts Apotheosis affix equipment and gems (clicking or dragging from JEI only marks the entry, nothing is consumed)",
+  "gui.applied_apotheosis.input_hint": "Drop in Apotheosis affix equipment or gems; the results go straight into the ME network. Rarity threshold: %s",
+  "gui.applied_apotheosis.filter_hint": "Filter entry: clicking or dragging from JEI only marks it, nothing is consumed",
+  "gui.applied_apotheosis.refused_rarity": "The ME Salvager does not take this: only Apotheosis affix equipment and gems can be salvaged (threshold %s)",
+  "gui.applied_apotheosis.refused_filter": "The ME Salvager does not take this: the filter settings block it (check the list and rarity chips)",
   "gui.applied_apotheosis.status.no_card": "No salvage card installed - the machine stays off",
   "gui.applied_apotheosis.status.idle": "Idle - nothing to salvage, or the network / power cannot keep up",
   "gui.applied_apotheosis.status.working": "Salvaging - %s ticks per cycle"

@@ -15,8 +15,11 @@ import appeng.menu.interfaces.IProgressProvider;
 import appeng.menu.slot.AppEngSlot;
 import appeng.menu.slot.FakeSlot;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -59,7 +62,7 @@ public class MeSalvagerMenu extends AEBaseMenu implements IProgressProvider {
         var input = host.getInternalInventory();
         for (int i = 0; i < MeSalvagerBlockEntity.INPUT_SLOTS; i++) {
             var slot = new AppEngSlot(input, i);
-            slot.setEmptyTooltip(MeSalvagerMenu::acceptedItemsTooltip);
+            slot.setEmptyTooltip(MeSalvagerMenu::inputTooltip);
             addSlot(slot, SlotSemantics.MACHINE_INPUT);
         }
 
@@ -69,7 +72,7 @@ public class MeSalvagerMenu extends AEBaseMenu implements IProgressProvider {
             // the entry - the item itself is never taken. AE2's JEI plugin handles the drag part and
             // calls canSetFilterTo, which we narrow down to Apotheosis loot.
             var slot = new SalvageableFakeSlot(filter, i);
-            slot.setEmptyTooltip(MeSalvagerMenu::acceptedItemsTooltip);
+            slot.setEmptyTooltip(MeSalvagerMenu::filterTooltip);
             addSlot(slot, SlotSemantics.CONFIG);
         }
 
@@ -88,9 +91,41 @@ public class MeSalvagerMenu extends AEBaseMenu implements IProgressProvider {
         return this.host;
     }
 
-    /** Tooltip shown on the empty input/filter slots, explaining what the machine accepts. */
-    private static List<Component> acceptedItemsTooltip() {
-        return List.of(Component.translatable("gui.applied_apotheosis.affix_only"));
+    /**
+     * Tooltip of an empty "to salvage" slot: what may be dropped in, including the rarity the
+     * machine is currently configured for.
+     */
+    private static List<Component> inputTooltip() {
+        return List.of(
+                Component.translatable("gui.applied_apotheosis.input_hint",
+                        MeSalvagerBlockEntity.minimumRarity().toString()),
+                Component.translatable("gui.applied_apotheosis.affix_only")
+                        .withStyle(ChatFormatting.GRAY));
+    }
+
+    /** Tooltip of an empty filter slot: the entries are markers, not real items. */
+    private static List<Component> filterTooltip() {
+        return List.of(Component.translatable("gui.applied_apotheosis.filter_hint")
+                .withStyle(ChatFormatting.GRAY));
+    }
+
+    /**
+     * Clicks into an input slot that the machine refuses are explained, instead of being dropped
+     * silently by vanilla - otherwise "why can't I put this in?" has no answer in game.
+     */
+    @Override
+    public void clicked(int slotId, int button, ClickType clickType, Player player) {
+        if (clickType == ClickType.PICKUP && slotId >= 0 && slotId < this.slots.size()
+                && !getCarried().isEmpty() && !this.slots.get(slotId).mayPlace(getCarried())
+                && getSlotSemantic(this.slots.get(slotId)) == SlotSemantics.MACHINE_INPUT) {
+            var stack = getCarried();
+            var reason = !MeSalvagerBlockEntity.hasRequiredRarity(stack)
+                    ? Component.translatable("gui.applied_apotheosis.refused_rarity",
+                            MeSalvagerBlockEntity.minimumRarity().toString())
+                    : Component.translatable("gui.applied_apotheosis.refused_filter");
+            player.displayClientMessage(reason, true);
+        }
+        super.clicked(slotId, button, clickType, player);
     }
 
     /**

@@ -22,6 +22,10 @@
   "gui.applied_apotheosis.rarity.epic": "史诗",
   "gui.applied_apotheosis.rarity.mythic": "神话",
   "gui.applied_apotheosis.affix_only": "只接受神化词缀装备与宝石（点击或从 JEI 拖入只做标记，不消耗物品）",
+  "gui.applied_apotheosis.input_hint": "把神化词缀装备或宝石放进来，产物会直接进 ME 网络。当前稀有度门槛：%s",
+  "gui.applied_apotheosis.filter_hint": "过滤条目：点击或从 JEI 拖入只做标记，不消耗物品",
+  "gui.applied_apotheosis.refused_rarity": "ME 分解器不收这个：只有神化词缀装备与宝石能拆（当前门槛 %s）",
+  "gui.applied_apotheosis.refused_filter": "ME 分解器不收这个：被过滤设置拦下了（检查黑白名单与稀有度勾选）",
   "gui.applied_apotheosis.status.no_card": "未装分解卡，机器不工作",
   "gui.applied_apotheosis.status.idle": "待机（没有可拆的东西，或网络 / 电力不足）",
   "gui.applied_apotheosis.status.working": "正在拆解 · 周期 %s tick"
