@@ -225,31 +225,9 @@ public final class SelfTest {
         salvager.setFilterMode(FilterMode.DISABLED);
 
         // --- rarity filter row: 普通 / 罕见 / 稀有 / 史诗 / 神话 ---
+        // Checked by the assertions further down; the bit is reused there.
         salvager.getFilterInventory().clear();
         int mythicBit = 1 << RarityFilter.indexOf(Apotheosis.loc("mythic"));
-
-        salvager.setFilterMode(FilterMode.WHITELIST);
-        salvager.setRarityFilter(mythicBit);
-        log("WHITELIST + only mythic ticked -> mythic gear leftover = {} (0 = correctly accepted)",
-                salvager.insertForSalvaging(rolledGear.copy()).getCount());
-        log("WHITELIST + only mythic ticked -> epic gear leftover = {} (1 = correctly blocked)",
-                salvager.insertForSalvaging(epicGear.copy()).getCount());
-        log("WHITELIST + only mythic ticked -> common gear leftover = {} (1 = correctly blocked)",
-                salvager.insertForSalvaging(commonGear.copy()).getCount());
-        salvager.getInternalInventory().clear();
-
-        salvager.setFilterMode(FilterMode.BLACKLIST);
-        log("BLACKLIST + mythic ticked -> mythic gear leftover = {} (1 = correctly blocked)",
-                salvager.insertForSalvaging(rolledGear.copy()).getCount());
-        log("BLACKLIST + mythic ticked -> common gear leftover = {} (0 = correctly accepted)",
-                salvager.insertForSalvaging(commonGear.copy()).getCount());
-        salvager.getInternalInventory().clear();
-
-        // Ticking nothing is not a restriction, so old machines keep behaving the same.
-        salvager.setRarityFilter(RarityFilter.NONE);
-        log("WHITELIST + nothing ticked + empty list -> common gear leftover = {} (0 = no restriction)",
-                salvager.insertForSalvaging(commonGear.copy()).getCount());
-        salvager.getInternalInventory().clear();
 
         // --- filter entries are ghost markers: marking with an item never takes the item ---
         var markerSlot = new MeSalvagerMenu.SalvageableFakeSlot(salvager.getFilterInventory(), 0);
@@ -324,6 +302,7 @@ public final class SelfTest {
         salvager.getInternalInventory().clear();
         salvager.getFilterInventory().clear();
 
+        // The rarity chips are a filter of their own: they apply whatever the list mode is.
         salvager.setRarityFilter(mythicBit);
         expect("whitelist + only mythic ticked accepts mythic",
                 salvager.insertForSalvaging(rolledGear.copy()).getCount(), 0);
@@ -332,13 +311,28 @@ public final class SelfTest {
         salvager.getInternalInventory().clear();
 
         salvager.setFilterMode(FilterMode.BLACKLIST);
-        expect("blacklist + mythic ticked blocks mythic",
-                salvager.insertForSalvaging(rolledGear.copy()).getCount(), 1);
-        expect("blacklist + mythic ticked still accepts common",
-                salvager.insertForSalvaging(commonGear.copy()).getCount(), 0);
+        expect("blacklist with an empty list accepts the ticked rarity",
+                salvager.insertForSalvaging(rolledGear.copy()).getCount(), 0);
+        expect("blacklist with an empty list still blocks an unticked rarity",
+                salvager.insertForSalvaging(commonGear.copy()).getCount(), 1);
         salvager.getInternalInventory().clear();
 
+        salvager.setFilterMode(FilterMode.DISABLED);
+        expect("the rarity filter also applies when the list mode is off (ticked)",
+                salvager.insertForSalvaging(rolledGear.copy()).getCount(), 0);
+        expect("the rarity filter also applies when the list mode is off (unticked)",
+                salvager.insertForSalvaging(commonGear.copy()).getCount(), 1);
+        salvager.getInternalInventory().clear();
+
+        // ... and the list mode never touches rarities by itself
         salvager.setRarityFilter(RarityFilter.NONE);
+        salvager.setFilterMode(FilterMode.BLACKLIST);
+        salvager.getFilterInventory().setItemDirect(0, new ItemStack(Items.DIAMOND_SWORD));
+        expect("blacklist blocks only the listed type, not its rarity",
+                salvager.insertForSalvaging(otherGear.copy()).getCount(), 0);
+        salvager.getInternalInventory().clear();
+        salvager.getFilterInventory().clear();
+
         salvager.setFilterMode(FilterMode.WHITELIST);
         expect("whitelist with nothing ticked and an empty list is no restriction",
                 salvager.insertForSalvaging(commonGear.copy()).getCount(), 0);

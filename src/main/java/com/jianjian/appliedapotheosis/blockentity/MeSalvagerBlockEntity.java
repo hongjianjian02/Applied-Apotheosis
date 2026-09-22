@@ -222,22 +222,27 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
     }
 
     /**
-     * Whether the configured blacklist/whitelist allows the given item to be processed.
+     * Whether the configured filters allow the given item to be processed.
      * <p>
-     * The filter has two parts: the rarity tiers ticked in the GUI, and the item types in the filter
-     * slots. Either part being empty means it is not a restriction, so a machine that only ever used
-     * the item list keeps working as before. In whitelist mode an item has to pass both parts, in
-     * blacklist mode either part is enough to block it.
+     * There are two independent filters:
+     * <ul>
+     * <li>the <b>rarity chips</b>: whenever any tier is ticked, only those tiers are salvaged. This
+     * does not depend on the list mode at all - an empty selection is simply no restriction.</li>
+     * <li>the <b>item list</b>, governed by the mode: off (the list does nothing), whitelist (only
+     * listed item types pass; an empty list is no restriction either) or blacklist (listed types
+     * never pass).</li>
+     * </ul>
+     * An item has to pass both.
      */
     public boolean isAllowedByFilter(ItemStack stack) {
-        boolean rarityTicked = matchesRarityFilter(stack);
-        boolean itemListed = matchesItemFilter(stack);
+        if (this.rarityFilter != RarityFilter.NONE && !matchesRarityFilter(stack)) {
+            return false;
+        }
 
         return switch (this.filterMode) {
             case DISABLED -> true;
-            case WHITELIST -> (this.rarityFilter == RarityFilter.NONE || rarityTicked)
-                    && (isItemFilterEmpty() || itemListed);
-            case BLACKLIST -> !rarityTicked && !itemListed;
+            case WHITELIST -> isItemFilterEmpty() || matchesItemFilter(stack);
+            case BLACKLIST -> !matchesItemFilter(stack);
         };
     }
 
