@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 import com.jianjian.appliedapotheosis.blockentity.MeSalvagerBlockEntity;
 import com.jianjian.appliedapotheosis.registry.ModMenus;
 
+import appeng.api.orientation.IOrientationStrategy;
+import appeng.api.orientation.OrientationStrategies;
 import appeng.block.AEBaseEntityBlock;
 import appeng.menu.MenuOpener;
 import appeng.menu.locator.MenuLocators;
@@ -32,6 +34,15 @@ public class MeSalvagerBlock extends AEBaseEntityBlock<MeSalvagerBlockEntity> {
     public MeSalvagerBlock() {
         super(metalProps().strength(3.5F));
         this.registerDefaultState(this.defaultBlockState().setValue(ACTIVE, false));
+    }
+
+    /**
+     * Horizontal facing, handled by AE2's orientation system: placing the block points it at the
+     * player, and right-clicking it with a wrench rotates it (sneak + wrench dismantles it).
+     */
+    @Override
+    public IOrientationStrategy getOrientationStrategy() {
+        return OrientationStrategies.horizontalFacing();
     }
 
     @Override

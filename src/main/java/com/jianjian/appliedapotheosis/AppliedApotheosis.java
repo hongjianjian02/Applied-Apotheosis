@@ -52,6 +52,7 @@ public class AppliedApotheosis {
     }
 
     public static ResourceLocation id(String path) {
-        return new ResourceLocation(MODID, path);
+        // the (namespace, path) constructor is deprecated in this Forge version
+        return ResourceLocation.fromNamespaceAndPath(MODID, path);
     }
 }

@@ -275,6 +275,14 @@ public final class SelfTest {
         // are the machine-checkable version, so CI fails when a rule breaks.
         // ------------------------------------------------------------------
         expect("upgrade slots fit 3 salvage + 3 speed", MeSalvagerBlockEntity.UPGRADE_SLOTS, 6);
+        expect("block has a horizontal facing property",
+                ModBlocks.ME_SALVAGER.get().defaultBlockState()
+                        .hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING),
+                true);
+        expect("facing can be changed with a wrench",
+                appeng.api.orientation.IOrientationStrategy
+                        .get(ModBlocks.ME_SALVAGER.get().defaultBlockState()).allowsPlayerRotation(),
+                true);
         expect("salvage card limit", Upgrades.getMaxInstallable(ModItems.SALVAGE_CARD.get(),
                 ModItems.ME_SALVAGER.get()), 3);
         expect("speed card limit", Upgrades.getMaxInstallable(AEItems.SPEED_CARD,

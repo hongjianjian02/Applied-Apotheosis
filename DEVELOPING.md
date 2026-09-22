@@ -119,6 +119,8 @@ updates.json                               游戏内更新检查用的版本清�
 | 稀有度门槛 | **配置文件** `machine.minimumRarity`（默认 `apotheosis:common`；改 `mythic` 即只收神话及以上） |
 | 接受什么（词缀装备 / 宝石） | `MeSalvagerBlockEntity.isApotheosisLoot`（词缀列表 or `GemItem.getGem(stack).isBound()`）与 `hasRequiredRarity` / `isAccepted` |
 | 过滤列表的标记规则 | `MeSalvagerMenu.SalvageableFakeSlot`（AE2 `FakeSlot` 子类，重写 `canSetFilterTo` 限定为神化战利品）——`mayPlace` 恒为 false，所以正常点击永远不会消耗物品；JEI 拖入由 AE2 的 `GhostIngredientHandler` 负责，它同样走 `canSetFilterTo` |
+| 方块朝向 | `MeSalvagerBlock.getOrientationStrategy()` 返回 AE2 的 `OrientationStrategies.horizontalFacing()`——属性、放置朝向、扳手旋转全由它接管；`blockstates/me_salvager.json` 里按 `facing=north→y0 / east→y90 / south→y180 / west→y270`（模型正面烘在 `north` 面，与 AE2 的 spatial_anchor 等一致） |
+| 方块朝向（AE2 语义） | 非潜行右键扳手 = 旋转（`WrenchHook` + `allowsPlayerRotation`），潜行右键扳手 = 拆下来 |
 | 哪些物品会被跳过 | `findSalvageableSlot()`：稀有度合格但神化没有拆解配方的（远古装备）直接跳过，不堵住队列 |
 | 稀有度筛选的五档与配色 | `RarityFilter.TIERS`（顺序 = 位掩码位序）/ `FALLBACK_COLORS`；图标直接取 `LootRarity#getMaterial()`（即 神秘废金属~神铸珍珠 那套材料），数据包改了材料会自动跟着变 |
 | 界面里那排图标的位置 | `assets/ae2/screens/me_salvager.json` 的 `rarityFilter` 条目：格子 18×18、间距 0（= 18 的列距，与槽位网格同拍），5 格共 90 px，起点 (80,16)，正好压在第 5~9 列槽位上方、右边缘与 9 格槽位行（8..170）齐平 |
@@ -131,7 +133,6 @@ updates.json                               游戏内更新检查用的版本清�
 
 ## 已知限制
 
-- 方块没有朝向属性，正面固定为北面。
 - 过滤列表只按物品种类匹配，同一物品种类的不同词缀无法区分。
 - 过滤列表里的条目是**幽灵标记**，不是真物品：机器被破坏时不会掉落它们（否则等于凭空产出）。
 - 稀有度筛选只有那 5 档（普通~神话）；远古不在其中，白名单勾了任意档就会把远古一起拦掉，

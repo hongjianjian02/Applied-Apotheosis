@@ -1,10 +1,34 @@
 {
   "variants": {
-    "active=false": {
+    "facing=north,active=false": {
       "model": "applied_apotheosis:block/me_salvager"
     },
-    "active=true": {
+    "facing=east,active=false": {
+      "model": "applied_apotheosis:block/me_salvager",
+      "y": 90
+    },
+    "facing=south,active=false": {
+      "model": "applied_apotheosis:block/me_salvager",
+      "y": 180
+    },
+    "facing=west,active=false": {
+      "model": "applied_apotheosis:block/me_salvager",
+      "y": 270
+    },
+    "facing=north,active=true": {
       "model": "applied_apotheosis:block/me_salvager_active"
+    },
+    "facing=east,active=true": {
+      "model": "applied_apotheosis:block/me_salvager_active",
+      "y": 90
+    },
+    "facing=south,active=true": {
+      "model": "applied_apotheosis:block/me_salvager_active",
+      "y": 180
+    },
+    "facing=west,active=true": {
+      "model": "applied_apotheosis:block/me_salvager_active",
+      "y": 270
     }
   }
 }
