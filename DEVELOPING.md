@@ -96,8 +96,8 @@ src/main/java/com/jianjian/appliedapotheosis/
 ├── filter/RarityFilter.java               稀有度筛选（普通~神话五档的位掩码 + 颜色回退值）
 ├── item/SalvageCardItem.java              分解卡（AE2 UpgradeCardItem）
 ├── menu/MeSalvagerMenu.java               容器菜单（输入 / 过滤 / 升级 / 玩家背包槽 + 进度条同步）
-├── client/MeSalvagerScreen.java           AE2 风格界面（过滤按钮进 addToLeftToolbar 左侧工具栏，升级卡进 UpgradesPanel 右侧面板）
-├── client/FilterModeButton.java           三态过滤按钮（WHITELIST / BLACKLIST 图标，走 AE2 工具栏）
+├── client/MeSalvagerScreen.java           AE2 风格界面（过滤按钮在面板内、过滤列表标题右侧；升级卡进 UpgradesPanel 右侧面板；进度条走 AE2 ProgressBar）
+├── client/FilterModeButton.java           三态过滤按钮（WHITELIST / BLACKLIST 图标）
 ├── client/RarityFilterWidget.java         5 个稀有度格子（画成 AE2 槽位：灰底 + 细边框，勾选时按稀有度混色、底边亮色；图标 = 该稀有度拆出的材料；点击 = 客户端动作，掩码同步回来）
 ├── registry/                              方块 / 物品 / 方块实体 / 菜单 / 创造标签页注册
 └── dev/                                   开发者自检（仅系统属性开启时生效）
@@ -149,6 +149,9 @@ updates.json                               游戏内更新检查用的版本清�
   中文会变成乱码写进 `mods.toml`（游戏 Mods 列表里就会显示 `?????¨??????`）。
   中文名放在 `README.md`、语言文件 `lang/zh_cn.json` 和 GUI 文本里即可（那些都是按 UTF-8 读的）。
 - `gradle.properties` 的改动会经 `processResources` 的 `expand` 注入 `mods.toml`，所以改完要重新 `build` 才会进 jar。
+- **`dev/` 包不能从 jar 里排除**：`AppliedApotheosis` 的构造函数直接调用 `SelfTest.isEnabled()` / `SelfTest::onServerStarted`，
+  把 dev 排除掉会让发布包在构造阶段就 `NoClassDefFoundError`。自检只在 `-Dapplied_apotheosis.selftest=true` 时生效，
+  留在包里没有副作用。
 - **AE2 界面样式 JSON 的 `widgets` 里不能塞 `"$comment": "字符串"`**：widget 的值必须是对象，Gson 解析失败会导致
   整张界面加载不出来；症状是客户端静默不开界面（`minecraft.screen` 为 null、日志里几乎没有报错）。
   服务端/客户端自检里那句 `GUI did NOT open` 就是为这种情况加的。

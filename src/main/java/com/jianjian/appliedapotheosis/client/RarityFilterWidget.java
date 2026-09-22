@@ -20,9 +20,10 @@ import net.minecraft.world.item.ItemStack;
 /**
  * The row of five rarity chips (普通 → 神话) that sits next to the filter label. Every chip shows the
  * material that rarity salvages into - 神秘废金属 / 陈旧布匹 / 发光水晶碎片 / 玄奥沙 / 神铸珍珠 - on a
- * backdrop in that rarity's colour: lit when the tier belongs to the filter, darkened when it does
- * not. What "belongs to the filter" means depends on the mode - a whitelist salvages exactly the
- * ticked tiers, a blacklist never salvages them.
+ * backdrop in that rarity's colour: lit when the tier is ticked, darkened when it is not.
+ * <p>
+ * The chips are a filter of their own: ticked tiers are the only ones salvaged, whatever the item
+ * list's mode is. Ticking nothing means no rarity restriction.
  * <p>
  * Clicking a chip hands its index to the menu, which forwards it to the server; the resulting mask
  * comes back through the synced field.

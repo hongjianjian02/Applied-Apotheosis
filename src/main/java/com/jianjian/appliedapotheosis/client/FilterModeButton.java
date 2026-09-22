@@ -2,8 +2,6 @@ package com.jianjian.appliedapotheosis.client;
 
 import java.util.List;
 
-import org.jetbrains.annotations.Nullable;
-
 import com.jianjian.appliedapotheosis.filter.FilterMode;
 
 import appeng.client.gui.Icon;
@@ -27,10 +25,6 @@ public class FilterModeButton extends IconButton {
             this.mode = mode;
             updateMessage();
         }
-    }
-
-    public FilterMode getMode() {
-        return this.mode;
     }
 
     private void updateMessage() {

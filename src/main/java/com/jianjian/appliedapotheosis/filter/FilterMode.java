@@ -30,11 +30,6 @@ public enum FilterMode {
         return VALUES[(ordinal() + 1) % VALUES.length];
     }
 
-    /** Safe lookup for network/NBT data, falling back to {@link #DISABLED}. */
-    public static FilterMode byOrdinal(int ordinal) {
-        return ordinal >= 0 && ordinal < VALUES.length ? VALUES[ordinal] : DISABLED;
-    }
-
     /** Safe lookup for NBT data saved by name. */
     public static FilterMode byName(String name) {
         for (var mode : VALUES) {
