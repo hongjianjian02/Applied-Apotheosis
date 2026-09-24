@@ -231,7 +231,16 @@ public final class ClientSelfTest {
         AppliedApotheosis.LOGGER.info("[clientselftest] " + message, args);
     }
 
-    /** Reports where AE2 ended up placing the slots and widgets, to check the layout from the log. */
+    /**
+     * Reports where AE2 ended up placing the slots and widgets, and checks the positions our GUI
+     * texture bakes its recesses at against the ones AE2 actually uses at runtime.
+     * <p>
+     * The player inventory is placed by AE2's own {@code common/player_inventory.json} include, and
+     * those offsets are version specific: AE2 15 put the inventory at bottom 82 and the hotbar at 24,
+     * AE2 19 uses 84 and 26. On the 205 pixel tall dialog that is 121/139/157 + 179, which is what
+     * {@code GenGui} bakes. When AE2 changes them again the slots drift out of their recesses, which
+     * is exactly the "the UI looks offset" report - this check turns it into a loud failure instead.
+     */
     private static void logGuiLayout(Minecraft minecraft) {
         if (!(minecraft.player.containerMenu instanceof MeSalvagerMenu menu)) {
             // A screen style that fails to load leaves the client without our screen - make that loud.
@@ -244,8 +253,27 @@ public final class ClientSelfTest {
         log("GUI layout: {} upgrade slot(s), first at {} / {} | screen = {} x {}",
                 upgrades.size(), upgrades.get(0).x, upgrades.get(0).y,
                 minecraft.screen.width, minecraft.screen.height);
-        log("GUI layout: filter slots at {} / {}",
-                menu.getSlots(SlotSemantics.CONFIG).get(0).x,
-                menu.getSlots(SlotSemantics.CONFIG).get(0).y);
+
+        var config = menu.getSlots(SlotSemantics.CONFIG).get(0);
+        log("GUI layout: filter slots at {} / {}", config.x, config.y);
+
+        // Baked into the background texture by GenGui, see there for how the numbers are derived.
+        final int panelHeight = 205;
+        final int expectedInvTop = panelHeight - 84;   // AE2 19: PLAYER_INVENTORY bottom 84
+        final int expectedHotbarTop = panelHeight - 26; // AE2 19: PLAYER_HOTBAR bottom 26
+
+        var inventory = menu.getSlots(SlotSemantics.PLAYER_INVENTORY).get(0);
+        var hotbar = menu.getSlots(SlotSemantics.PLAYER_HOTBAR).get(0);
+        boolean aligned = inventory.y == expectedInvTop && hotbar.y == expectedHotbarTop;
+
+        log("GUI layout: player inventory at {} / {} (texture bakes {}) | hotbar at {} / {} (texture bakes {}){}",
+                inventory.x, inventory.y, expectedInvTop, hotbar.x, hotbar.y, expectedHotbarTop,
+                aligned ? "" : "   <-- MISALIGNED: rebuild the GUI texture for this AE2 version");
+        if (!aligned) {
+            AppliedApotheosis.LOGGER.error(
+                    "[clientselftest] the GUI texture no longer matches AE2's player inventory offsets:"
+                            + " inventory y={} (baked {}), hotbar y={} (baked {})",
+                    inventory.y, expectedInvTop, hotbar.y, expectedHotbarTop);
+        }
     }
 }
