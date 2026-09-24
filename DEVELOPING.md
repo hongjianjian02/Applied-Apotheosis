@@ -30,6 +30,13 @@
 - **数据包**：1.21 的目录名是单数 —— `data/<ns>/recipe/`、`data/<ns>/loot_table/`。
 - 神化的 `apotheosis:book` 配方需要 **Patchouli**，Curios/Patchouli 都是可选前置，
   开发环境里两个都装上了（`build.gradle` 里有对应 maven），否则日志会刷配方解析错误。
+- **GUI 配色跟 AE2 版本走**：AE2 19 换了一整套冷色调（面板 `#CBCCD4` + `#413F54` 外框 +
+  `#F2F2F2` 亮线 + 底部 `#878FA5` 2px 投影、直角；槽位凹槽画在**槽位坐标 − 1** 处，
+  `#F2F2F2` 边 + 顶部内侧 `#9A9FB4` 暗带 + `#ADB0C4` 填充），而 AE2 15（1.20.1）是
+  黑框 + 白/灰立体斜面 + `#C6C6C6` + 圆角。这些值都是从 AE2 19 自己的
+  `guis/molecular_assembler.png`、`inscriber.png`、`vibchamber.png` 逐像素量出来的，
+  所以 **1.21.1 分支的贴图和 `RarityFilterWidget` 用的是 19 的色板，1.20.1 分支用 15 的**，
+  两个分支不要互相同步这两处。
 - 开发环境窗口失焦会自动暂停、把界面关掉 —— 客户端自检里设了
   `options.pauseOnLostFocus = false`，否则截图拍到的是暂停菜单。
 - **GUI 背景贴图里的槽位凹槽必须和 AE2 运行时的槽位位置一致**：玩家背包是由 AE2 自己的

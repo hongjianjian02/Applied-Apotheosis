@@ -33,9 +33,10 @@ public class RarityFilterWidget extends AbstractWidget implements ITooltip {
     private static final int CHIP = 18;
     /** Cell pitch. Kept as a field so the grid stays aligned if a gap is ever wanted. */
     private static final int GAP = 0;
-    /** Slot-like recess, matching the machine's own slots (#8B8B8B inside a #373737 border). */
-    private static final int SLOT_FILL = 0xFF8B8B8B;
-    private static final int SLOT_BORDER = 0xFF373737;
+    /** Recess in AE2 19's palette: #F2F2F2 border, #9A9FB4 band under the top edge, #ADB0C4 fill. */
+    private static final int SLOT_FILL = 0xFFADB0C4;
+    private static final int SLOT_BORDER = 0xFFF2F2F2;
+    private static final int SLOT_TOP = 0xFF9A9FB4;
     /** Dimming overlay drawn over the icon of an unticked chip. */
     private static final int DIMMED = 0x8C000000;
     /** How much of the rarity colour is mixed into the slot fill of a ticked chip. */
@@ -109,8 +110,10 @@ public class RarityFilterWidget extends AbstractWidget implements ITooltip {
                 g.fill(x + 4, y + 4, x + CHIP - 4, y + CHIP - 4, withAlpha(darken(color), 0xFF));
             }
 
-            // Hairline border, with the rarity shown along the bottom edge and hover along the top.
+            // Hairline border in AE2 19's style: light line all around, a darker band under the top
+            // edge, the rarity along the bottom edge when ticked and white on the top edge on hover.
             g.fill(x, y, x + CHIP, y + 1, hovered ? 0xFFFFFFFF : SLOT_BORDER);
+            g.fill(x + 1, y + 1, x + CHIP - 1, y + 2, SLOT_TOP);
             g.fill(x, y, x + 1, y + CHIP, SLOT_BORDER);
             g.fill(x + CHIP - 1, y, x + CHIP, y + CHIP, SLOT_BORDER);
             g.fill(x, y + CHIP - 1, x + CHIP, y + CHIP, ticked ? brighten(color) : SLOT_BORDER);
