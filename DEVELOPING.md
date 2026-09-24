@@ -2,9 +2,40 @@
 
 面向开发者/维护者。玩家使用说明请看 [README.md](README.md)。
 
+> 这是 **1.21.1 / NeoForge** 分支（`1.21.1-neoforge`），1.20.1 / Forge 版本在 `main` 上。
+> 本分支用 **ModDevGradle**，需要 **JDK 21**。
+
+## 1.21.1 移植要点（踩过的坑）
+
+- **网络**：Gradle/JVM **不读 Windows 的系统代理**，只认 `HTTP(S)_PROXY` 或 JVM 的
+  `-Dhttps.proxyHost`。本机因此在 `gradle.properties`（Gradle 全局那份，不在仓库里）里写了
+  `systemProp.https.proxyHost=127.0.0.1` / `systemProp.https.proxyPort=7897`。没有代理会卡在
+  `maven.neoforged.net` 握手失败。
+- **AE2 19 把"网格成员"改成了 NeoForge 方块能力**（`AECapabilities.IN_WORLD_GRID_NODE_HOST`），
+  而且只为 AE2 自己的方块实体类型注册。**附属模组必须自己注册**，否则机器的节点永远连不上邻居：
+  表现是机器单独待在一个网格里、`powered=false`、什么都不拆（自检的 3 条网络断言会失败）。
+  修复见 `registry/ModCapabilities`（顺带注册 `Capabilities.ItemHandler.BLOCK`，
+  否则管道/漏斗也推不进来）。
+- **AE2 19 的接口签名**：`AENetworkInvBlockEntity` → `AENetworkedInvBlockEntity`；
+  `MenuLocator` → `MenuHostLocator`；`TickingRequest` 去掉 `canBeAlerted`；存档方法都加
+  `HolderLookup.Provider`；网络同步改用 `RegistryFriendlyByteBuf`；界面注册改事件式
+  （`RegisterMenuScreensEvent` + `InitScreens.register(event, ...)`）；方块交互从
+  `onActivated()` 变成 `useItemOn()` 且返回 `ItemInteractionResult`。
+- **神化 8.x**：包名去掉 `adventure.` 段（`affix.*` / `loot.*` / `socket.gem.*`）；
+  `AffixHelper.hasAffixes` → `getAffixes`；`SalvagingMenu.salvageItem` → `getSalvageResults`
+  （`findMatch` 返回列表）；`LootRarity.isAtLeast` → 比较 `sortIndex()`；
+  `getColor()/getMaterial()` → `color()/material()`；造战利品需要 `GenContext`。
+  **宝石不再带稀有度**（改用纯度 purity，配方按纯度分档），所以稀有度门槛现在只管词缀装备，
+  宝石一律放行、按纯度产出宝石粉。
+- **数据包**：1.21 的目录名是单数 —— `data/<ns>/recipe/`、`data/<ns>/loot_table/`。
+- 神化的 `apotheosis:book` 配方需要 **Patchouli**，Curios/Patchouli 都是可选前置，
+  开发环境里两个都装上了（`build.gradle` 里有对应 maven），否则日志会刷配方解析错误。
+- 开发环境窗口失焦会自动暂停、把界面关掉 —— 客户端自检里设了
+  `options.pauseOnLostFocus = false`，否则截图拍到的是暂停菜单。
+
 ## 构建
 
-需要 **JDK 17**。
+需要 **JDK 21**。
 
 ```bash
 ./gradlew build          # 产物在 build/libs/applied_apotheosis-<version>.jar

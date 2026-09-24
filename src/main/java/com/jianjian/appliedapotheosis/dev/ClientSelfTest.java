@@ -65,6 +65,10 @@ public final class ClientSelfTest {
             return;
         }
 
+        // The dev window is usually unfocused, and pausing on lost focus closes the screen we are
+        // trying to screenshot.
+        minecraft.options.pauseOnLostFocus = false;
+
         ticks++;
         switch (stage) {
             case 0 -> {

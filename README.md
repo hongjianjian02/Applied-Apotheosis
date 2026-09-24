@@ -1,8 +1,10 @@
 # Applied Apotheosis（应用神化）
 
-一个 Minecraft **Forge 1.20.1** 模组，作为 **Applied Energistics 2 (AE2)** 的附属：
+一个 Minecraft **NeoForge 1.21.1** 模组，作为 **Applied Energistics 2 (AE2)** 的附属：
 把 **Apotheosis（神化）** 的词缀装备和**宝石**丢进「ME 分解器」，它会按神化自己的规则拆成材料与宝石粉，
 并**直接把产物送进你的 ME 网络**。
+
+> 这是 **1.21.1 / NeoForge** 分支。1.20.1 / Forge 版本在同仓库的 `main` 分支上。
 
 - mod id：`applied_apotheosis`
 - 作者：jianjian_
@@ -12,19 +14,19 @@
 
 | 依赖 | 版本 |
 |---|---|
-| Minecraft | 1.20.1 |
-| Forge | 47.4.23（≥47.1.3 的 47.x 均可） |
-| Applied Energistics 2 | 15.4.10 |
-| GuideME | 20.1.7（AE2 的前置） |
-| Apotheosis | 1.20.1-7.4.8 |
-| Placebo | 1.20.1-8.6.2（神化的前置） |
-| ApothicAttributes | 1.20.1-1.3.5（神化的前置） |
+| Minecraft | 1.21.1 |
+| NeoForge | 21.1.251（≥21.1.235 的 21.1.x 均可） |
+| Applied Energistics 2 | 19.2.17 |
+| GuideME | 21.1.19（AE2 的前置） |
+| Apotheosis | 1.21.1-8.8.0 |
+| Placebo | 1.21.1-9.9.2（神化的前置） |
+| ApothicAttributes | 1.21.1-2.10.1（神化的前置） |
 
 ## 安装
 
-1. 建一个 **1.20.1 + Forge 47.4.x** 的实例
+1. 建一个 **1.21.1 + NeoForge 21.1.x** 的实例
 2. 把本模组和上表所有前置 jar 一起放进 `.minecraft\mods\`（少一个都会在启动时报依赖错误）
-3. 用 **Java 17** 启动游戏
+3. 用 **Java 21** 启动游戏
 
 ## 快速上手
 
