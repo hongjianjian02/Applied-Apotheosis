@@ -7,7 +7,7 @@ import com.jianjian.appliedapotheosis.filter.RarityFilter;
 import com.jianjian.appliedapotheosis.menu.MeSalvagerMenu;
 
 import appeng.client.gui.widgets.ITooltip;
-import dev.shadowsoffire.apotheosis.adventure.loot.RarityRegistry;
+import dev.shadowsoffire.apotheosis.loot.RarityRegistry;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -60,7 +60,7 @@ public class RarityFilterWidget extends AbstractWidget implements ITooltip {
     private static int resolveColor(int index) {
         var holder = RarityRegistry.INSTANCE.holder(RarityFilter.TIERS.get(index));
         if (holder.isBound()) {
-            var color = holder.get().getColor();
+            var color = holder.get().color();
             if (color != null) {
                 return color.getValue();
             }
@@ -75,7 +75,7 @@ public class RarityFilterWidget extends AbstractWidget implements ITooltip {
     private static ItemStack resolveIcon(int index) {
         var holder = RarityRegistry.INSTANCE.holder(RarityFilter.TIERS.get(index));
         if (holder.isBound()) {
-            var material = holder.get().getMaterial();
+            var material = holder.get().material().value();
             if (material != null) {
                 return new ItemStack(material);
             }

@@ -12,26 +12,28 @@ import com.jianjian.appliedapotheosis.registry.ModItems;
 
 import appeng.api.config.Actionable;
 import appeng.api.upgrades.Upgrades;
-import appeng.blockentity.storage.ChestBlockEntity;
+import appeng.blockentity.storage.MEChestBlockEntity;
 import appeng.core.definitions.AEBlocks;
 import appeng.core.definitions.AEItems;
 import appeng.me.helpers.MachineSource;
+import dev.shadowsoffire.apotheosis.tiers.GenContext;
 import dev.shadowsoffire.apotheosis.Apotheosis;
-import dev.shadowsoffire.apotheosis.adventure.affix.AffixHelper;
-import dev.shadowsoffire.apotheosis.adventure.affix.salvaging.SalvagingMenu;
-import dev.shadowsoffire.apotheosis.adventure.loot.LootController;
-import dev.shadowsoffire.apotheosis.adventure.loot.LootRarity;
-import dev.shadowsoffire.apotheosis.adventure.loot.RarityRegistry;
-import dev.shadowsoffire.apotheosis.adventure.socket.gem.GemRegistry;
+import dev.shadowsoffire.apotheosis.affix.AffixHelper;
+import dev.shadowsoffire.apotheosis.affix.salvaging.SalvagingMenu;
+import dev.shadowsoffire.apotheosis.loot.LootController;
+import dev.shadowsoffire.apotheosis.loot.LootRarity;
+import dev.shadowsoffire.apotheosis.loot.RarityRegistry;
+import dev.shadowsoffire.apotheosis.socket.gem.GemItem;
+import dev.shadowsoffire.apotheosis.socket.gem.GemRegistry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.server.ServerStartedEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 /**
  * Developer self-test. Enabled only with {@code -Dapplied_apotheosis.selftest=true}: it builds a small
@@ -47,7 +49,7 @@ public final class SelfTest {
 
     private static ServerLevel level;
     private static MeSalvagerBlockEntity salvager;
-    private static ChestBlockEntity chest;
+    private static MEChestBlockEntity chest;
     private static ItemStack rolledGear = ItemStack.EMPTY;
     private static ItemStack testGem = ItemStack.EMPTY;
     private static int ticks;
@@ -67,7 +69,7 @@ public final class SelfTest {
         level = event.getServer().overworld();
         try {
             setup();
-            MinecraftForge.EVENT_BUS.addListener(SelfTest::onServerTick);
+            NeoForge.EVENT_BUS.addListener(SelfTest::onServerTick);
         } catch (Throwable t) {
             AppliedApotheosis.LOGGER.error("[selftest] setup FAILED", t);
             event.getServer().halt(false);
@@ -76,9 +78,9 @@ public final class SelfTest {
 
     private static void setup() {
         log("registered item applied_apotheosis:me_salvager = {}",
-                ForgeRegistries.ITEMS.getValue(AppliedApotheosis.id("me_salvager")));
+                BuiltInRegistries.ITEM.get(AppliedApotheosis.id("me_salvager")));
         log("registered item applied_apotheosis:salvage_card = {}",
-                ForgeRegistries.ITEMS.getValue(AppliedApotheosis.id("salvage_card")));
+                BuiltInRegistries.ITEM.get(AppliedApotheosis.id("salvage_card")));
         log("registered block entity type = {}", ModBlockEntities.ME_SALVAGER.get());
         log("card slots on the machine = {} salvage / {} speed | upgrade slots = {}",
                 Upgrades.getMaxInstallable(ModItems.SALVAGE_CARD.get(), ModItems.ME_SALVAGER.get()),
@@ -88,11 +90,11 @@ public final class SelfTest {
         // --- the mechanic itself, straight through the Apotheosis API ---
         LootRarity mythic = RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get();
         rolledGear = LootController.createLootItem(new ItemStack(Items.DIAMOND_SWORD), mythic,
-                level.getRandom());
+                GenContext.dummy(level.getRandom()));
         log("rolled affix gear = {} | hasAffixes = {} | rarity = {}",
-                rolledGear, AffixHelper.hasAffixes(rolledGear), AffixHelper.getRarity(rolledGear).getId());
-        log("Apotheosis salvaging produced: {}", SalvagingMenu.salvageItem(level, rolledGear));
-        log("expected result item = {}", mythic.getMaterial());
+                rolledGear, !AffixHelper.getAffixes(rolledGear).isEmpty(), AffixHelper.getRarity(rolledGear).getId());
+        log("Apotheosis salvaging produced: {}", SalvagingMenu.getSalvageResults(level, rolledGear));
+        log("expected result item = {}", mythic.material().value());
 
         // --- build a tiny ME network: machine + creative energy cell + ME chest with a 1k cell ---
         BlockPos machinePos = level.getSharedSpawnPos().offset(0, 6, 0);
@@ -106,7 +108,7 @@ public final class SelfTest {
         level.setBlockAndUpdate(powerPos, AEBlocks.CREATIVE_ENERGY_CELL.block().defaultBlockState());
 
         BlockPos chestPos = machinePos.south();
-        level.setBlockAndUpdate(chestPos, AEBlocks.CHEST.block().defaultBlockState());
+        level.setBlockAndUpdate(chestPos, AEBlocks.ME_CHEST.block().defaultBlockState());
 
         if (!(level.getBlockEntity(machinePos) instanceof MeSalvagerBlockEntity machine)) {
             throw new IllegalStateException("ME Salvager block entity was not created");
@@ -118,7 +120,7 @@ public final class SelfTest {
         salvager.getFilterInventory().clear();
         salvager.setFilterMode(FilterMode.DISABLED);
 
-        chest = (ChestBlockEntity) level.getBlockEntity(chestPos);
+        chest = (MEChestBlockEntity) level.getBlockEntity(chestPos);
         if (chest == null) {
             throw new IllegalStateException("ME Chest block entity was not created");
         }
@@ -151,18 +153,18 @@ public final class SelfTest {
 
         // --- rarity gate: every Apotheosis affix item is accepted, from common upwards ---
         var commonGear = LootController.createLootItem(new ItemStack(Items.DIAMOND_SWORD),
-                RarityRegistry.INSTANCE.holder(Apotheosis.loc("common")).get(), level.getRandom());
+                RarityRegistry.INSTANCE.holder(Apotheosis.loc("common")).get(), GenContext.dummy(level.getRandom()));
         log("lowest-rarity gear = {} | rarity = {} | hasAffixes = {}",
-                commonGear, AffixHelper.getRarity(commonGear).getId(), AffixHelper.hasAffixes(commonGear));
+                commonGear, AffixHelper.getRarity(commonGear).getId(), !AffixHelper.getAffixes(commonGear).isEmpty());
         log("common gear into input -> leftover = {} (0 = correctly accepted)",
                 salvager.insertForSalvaging(commonGear.copy()).getCount());
         log("common gear into filter list -> valid = {} (true = correctly accepted)",
                 salvager.getFilterInventory().isItemValid(0, commonGear.copy()));
 
         var epicGear = LootController.createLootItem(new ItemStack(Items.DIAMOND_SWORD),
-                RarityRegistry.INSTANCE.holder(Apotheosis.loc("epic")).get(), level.getRandom());
+                RarityRegistry.INSTANCE.holder(Apotheosis.loc("epic")).get(), GenContext.dummy(level.getRandom()));
         log("epic gear = {} | rarity = {} | hasAffixes = {}",
-                epicGear, AffixHelper.getRarity(epicGear).getId(), AffixHelper.hasAffixes(epicGear));
+                epicGear, AffixHelper.getRarity(epicGear).getId(), !AffixHelper.getAffixes(epicGear).isEmpty());
         log("epic gear into input -> leftover = {} (0 = correctly accepted)",
                 salvager.insertForSalvaging(epicGear.copy()).getCount());
 
@@ -172,38 +174,36 @@ public final class SelfTest {
                 salvager.insertForSalvaging(rolledGear.copy()).getCount());
         salvager.getInternalInventory().clear();
 
-        // --- gems count as loot too: no affix list, but a rarity in the same affix_data tag, and
-        //     Apotheosis salvages them into gem dust instead of a material ---
-        var gemType = GemRegistry.INSTANCE.getValues().stream().findFirst().orElse(null);
-        if (gemType == null) {
+        // --- gems count as loot too: no affix list, and Apotheosis 8.x salvages them by purity
+        //     into gem dust instead of a rarity material ---
+        testGem = GemRegistry.createRandomGemStack(GenContext.dummy(level.getRandom()));
+        if (testGem.isEmpty()) {
             log("no gems registered - skipping the gem check");
         } else {
-            testGem = GemRegistry.createGemStack(gemType, mythic);
-            log("mythic gem = {} | rarity = {} | hasAffixes = {} | isApotheosisLoot = {} | accepted = {}",
-                    testGem, AffixHelper.getRarity(testGem).getId(), AffixHelper.hasAffixes(testGem),
+            log("gem = {} | purity = {} | hasAffixes = {} | isApotheosisLoot = {} | accepted = {}",
+                    testGem, GemItem.getPurity(testGem), !AffixHelper.getAffixes(testGem).isEmpty(),
                     MeSalvagerBlockEntity.isApotheosisLoot(testGem),
                     MeSalvagerBlockEntity.hasRequiredRarity(testGem));
-            log("mythic gem into input -> leftover = {} (0 = correctly accepted)",
+            log("gem into input -> leftover = {} (0 = correctly accepted)",
                     salvager.insertForSalvaging(testGem.copy()).getCount());
-            log("mythic gem into filter list -> valid = {} (true = correctly accepted)",
+            log("gem into filter list -> valid = {} (true = correctly accepted)",
                     salvager.getFilterInventory().isItemValid(0, testGem.copy()));
             salvager.getInternalInventory().clear();
             log("Apotheosis salvaging produced from the gem: {} (expect gem dust)",
-                    SalvagingMenu.salvageItem(level, testGem.copy()));
+                    SalvagingMenu.getSalvageResults(level, testGem.copy()));
         }
 
-        // A mythic item whose affix list was emptied must not sneak in either.
-        var stripped = rolledGear.copy();
-        if (stripped.hasTag()) {
-            stripped.getTag().getCompound(AffixHelper.AFFIX_DATA).remove(AffixHelper.AFFIXES);
-        }
+        // A mythic item whose affix list is empty must not sneak in either. In 8.x the rarity is a
+        // data component of its own, so a rarity can be set without any affixes - exactly this case.
+        var stripped = new ItemStack(Items.DIAMOND_SWORD);
+        AffixHelper.setRarity(stripped, mythic);
         log("mythic rarity but empty affix list -> hasAffixes = {} | accepted = {}",
-                AffixHelper.hasAffixes(stripped), MeSalvagerBlockEntity.hasRequiredRarity(stripped));
+                !AffixHelper.getAffixes(stripped).isEmpty(), MeSalvagerBlockEntity.hasRequiredRarity(stripped));
 
         // --- blacklist / whitelist behaviour ---
         var otherGear = LootController.createLootItem(new ItemStack(Items.DIAMOND_CHESTPLATE),
-                RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get(), level.getRandom());
-        log("second affix item = {} | hasAffixes = {}", otherGear, AffixHelper.hasAffixes(otherGear));
+                RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get(), GenContext.dummy(level.getRandom()));
+        log("second affix item = {} | hasAffixes = {}", otherGear, !AffixHelper.getAffixes(otherGear).isEmpty());
 
         salvager.getFilterInventory().setItemDirect(0, new ItemStack(Items.DIAMOND_SWORD));
 
@@ -275,15 +275,15 @@ public final class SelfTest {
         expect("plain diamond is not accepted", MeSalvagerBlockEntity.hasRequiredRarity(new ItemStack(Items.DIAMOND)), false);
         expect("emptied affix list is rejected", MeSalvagerBlockEntity.hasRequiredRarity(stripped.copy()), false);
         expect("affix gear salvages into its rarity material",
-                SalvagingMenu.salvageItem(level, rolledGear.copy()).stream().anyMatch(s -> s.is(mythic.getMaterial())),
+                SalvagingMenu.getSalvageResults(level, rolledGear.copy()).stream().anyMatch(s -> s.is(mythic.material().value())),
                 true);
         if (!testGem.isEmpty()) {
             expect("gem counts as loot", MeSalvagerBlockEntity.isApotheosisLoot(testGem.copy()), true);
             expect("gem passes the rarity gate", MeSalvagerBlockEntity.hasRequiredRarity(testGem.copy()), true);
             expect("gem salvages into gem dust",
-                    SalvagingMenu.salvageItem(level, testGem.copy()).stream()
+                    SalvagingMenu.getSalvageResults(level, testGem.copy()).stream()
                             .anyMatch(s -> "apotheosis:gem_dust"
-                                    .equals(String.valueOf(ForgeRegistries.ITEMS.getKey(s.getItem())))),
+                                    .equals(String.valueOf(BuiltInRegistries.ITEM.getKey(s.getItem())))),
                     true);
         }
 
@@ -373,8 +373,8 @@ public final class SelfTest {
         return count;
     }
 
-    private static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || finished) {
+    private static void onServerTick(ServerTickEvent.Post event) {
+        if (finished) {
             return;
         }
         ticks++;
@@ -416,7 +416,7 @@ public final class SelfTest {
             log("ME network storage now holds = [{}]", contents);
 
             var mythic = RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get();
-            log("expected material from the affix item = {}", new ItemStack(mythic.getMaterial()));
+            log("expected material from the affix item = {}", new ItemStack(mythic.material().value()));
 
             expect("input buffer is empty again", inputCount(), 0);
             expect("network holds the salvaged material", contents.contains("mythic_material"), true);

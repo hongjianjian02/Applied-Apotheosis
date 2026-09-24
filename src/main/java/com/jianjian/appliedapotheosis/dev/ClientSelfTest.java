@@ -9,24 +9,27 @@ import com.jianjian.appliedapotheosis.registry.ModBlocks;
 import com.jianjian.appliedapotheosis.registry.ModItems;
 import com.jianjian.appliedapotheosis.registry.ModMenus;
 
-import appeng.blockentity.storage.ChestBlockEntity;
+import appeng.blockentity.storage.MEChestBlockEntity;
 import appeng.core.definitions.AEBlocks;
 import appeng.core.definitions.AEItems;
 import appeng.menu.MenuOpener;
 import appeng.menu.SlotSemantics;
 import appeng.menu.locator.MenuLocators;
+import dev.shadowsoffire.apotheosis.tiers.GenContext;
 import dev.shadowsoffire.apotheosis.Apotheosis;
-import dev.shadowsoffire.apotheosis.adventure.loot.LootController;
-import dev.shadowsoffire.apotheosis.adventure.loot.RarityRegistry;
+import dev.shadowsoffire.apotheosis.loot.LootController;
+import dev.shadowsoffire.apotheosis.loot.RarityRegistry;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 /**
  * Client-side developer self-test, enabled with {@code -Dapplied_apotheosis.clientselftest=true}.
@@ -49,11 +52,11 @@ public final class ClientSelfTest {
     }
 
     public static void register() {
-        MinecraftForge.EVENT_BUS.addListener(ClientSelfTest::onClientTick);
+        NeoForge.EVENT_BUS.addListener(ClientSelfTest::onClientTick);
     }
 
-    private static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || done) {
+    private static void onClientTick(ClientTickEvent.Post event) {
+        if (done) {
             return;
         }
 
@@ -111,10 +114,10 @@ public final class ClientSelfTest {
                 level.setBlockAndUpdate(machinePos, ModBlocks.ME_SALVAGER.get().defaultBlockState());
                 level.setBlockAndUpdate(machinePos.east(),
                         AEBlocks.CREATIVE_ENERGY_CELL.block().defaultBlockState());
-                level.setBlockAndUpdate(machinePos.south(), AEBlocks.CHEST.block().defaultBlockState());
+                level.setBlockAndUpdate(machinePos.south(), AEBlocks.ME_CHEST.block().defaultBlockState());
 
                 var machine = (MeSalvagerBlockEntity) level.getBlockEntity(machinePos);
-                var chest = (ChestBlockEntity) level.getBlockEntity(machinePos.south());
+                var chest = (MEChestBlockEntity) level.getBlockEntity(machinePos.south());
                 chest.getInternalInventory().addItems(AEItems.ITEM_CELL_1K.stack());
                 machine.getUpgrades().addItems(new ItemStack(ModItems.SALVAGE_CARD.get()));
 
@@ -122,13 +125,13 @@ public final class ClientSelfTest {
                 // Anything the machine accepts may go in either place; these are rolled at mythic.
                 var mythic = RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get();
                 var sword = LootController.createLootItem(new ItemStack(Items.DIAMOND_SWORD), mythic,
-                        level.getRandom());
+                        GenContext.dummy(level.getRandom()));
                 var chestplate = LootController.createLootItem(new ItemStack(Items.DIAMOND_CHESTPLATE),
-                        mythic, level.getRandom());
+                        mythic, GenContext.dummy(level.getRandom()));
                 var helmet = LootController.createLootItem(new ItemStack(Items.GOLDEN_HELMET), mythic,
-                        level.getRandom());
+                        GenContext.dummy(level.getRandom()));
                 var bow = LootController.createLootItem(new ItemStack(Items.BOW), mythic,
-                        level.getRandom());
+                        GenContext.dummy(level.getRandom()));
 
                 machine.setFilterMode(FilterMode.BLACKLIST);
                 machine.getFilterInventory().setItemDirect(0, sword.copyWithCount(1));
@@ -150,7 +153,7 @@ public final class ClientSelfTest {
 
                 log("world prepared at {}, opening GUI", machinePos);
                 log("menu type = {} | block entity = {}",
-                        net.minecraftforge.registries.ForgeRegistries.MENU_TYPES
+                        net.minecraft.core.registries.BuiltInRegistries.MENU
                                 .getKey(ModMenus.ME_SALVAGER.get()),
                         machine);
                 boolean opened = MenuOpener.open(ModMenus.ME_SALVAGER.get(), player,
@@ -189,7 +192,7 @@ public final class ClientSelfTest {
 
             var mythic = RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get();
             var loot = LootController.createLootItem(new ItemStack(Items.DIAMOND_SWORD), mythic,
-                    server.overworld().getRandom());
+                    GenContext.dummy(server.overworld().getRandom()));
 
             menu.setCarried(loot.copy());
             menu.clicked(slot.index, 0, ClickType.PICKUP, player);

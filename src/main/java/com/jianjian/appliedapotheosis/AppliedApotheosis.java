@@ -7,11 +7,11 @@ import com.jianjian.appliedapotheosis.registry.ModItems;
 import com.jianjian.appliedapotheosis.registry.ModMenus;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.slf4j.Logger;
 
 /**
@@ -23,9 +23,8 @@ public class AppliedApotheosis {
     public static final String MODID = "applied_apotheosis";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public AppliedApotheosis(FMLJavaModLoadingContext context) {
-        IEventBus modBus = context.getModEventBus();
-
+    // NeoForge injects the mod event bus and this mod's container into the constructor.
+    public AppliedApotheosis(IEventBus modBus, ModContainer container) {
         ModBlocks.register(modBus);
         ModItems.register(modBus);
         ModBlockEntities.register(modBus);
@@ -33,13 +32,13 @@ public class AppliedApotheosis {
         ModCreativeTabs.register(modBus);
 
         // Tunables live in config/applied_apotheosis-common.toml
-        context.registerConfig(ModConfig.Type.COMMON, AppliedApotheosisConfig.SPEC);
+        container.registerConfig(ModConfig.Type.COMMON, AppliedApotheosisConfig.SPEC);
 
         modBus.addListener(this::commonSetup);
 
         if (com.jianjian.appliedapotheosis.dev.SelfTest.isEnabled()) {
             LOGGER.warn("Applied Apotheosis self-test enabled - the server will shut down after verification");
-            net.minecraftforge.common.MinecraftForge.EVENT_BUS
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS
                     .addListener(com.jianjian.appliedapotheosis.dev.SelfTest::onServerStarted);
         }
     }

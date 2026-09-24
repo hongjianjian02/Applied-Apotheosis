@@ -7,16 +7,16 @@ import com.jianjian.appliedapotheosis.block.MeSalvagerBlock;
 import com.jianjian.appliedapotheosis.blockentity.MeSalvagerBlockEntity;
 import appeng.blockentity.AEBaseBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 public final class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES = DeferredRegister
-            .create(ForgeRegistries.BLOCK_ENTITY_TYPES, AppliedApotheosis.MODID);
+            .create(Registries.BLOCK_ENTITY_TYPE, AppliedApotheosis.MODID);
 
-    public static final RegistryObject<BlockEntityType<MeSalvagerBlockEntity>> ME_SALVAGER = BLOCK_ENTITY_TYPES
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MeSalvagerBlockEntity>> ME_SALVAGER = BLOCK_ENTITY_TYPES
             .register("me_salvager", ModBlockEntities::createMeSalvagerType);
 
     private ModBlockEntities() {

@@ -14,6 +14,7 @@ import appeng.util.InteractionUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -56,39 +57,41 @@ public class MeSalvagerBlock extends AEBaseEntityBlock<MeSalvagerBlockEntity> {
         return currentState.setValue(ACTIVE, be.isActive());
     }
 
+    // 1.21 replaced the old use()/onActivated() pair with useItemOn(), which reports an
+    // ItemInteractionResult instead of an InteractionResult.
     @Override
-    public InteractionResult onActivated(Level level, BlockPos pos, Player player, InteractionHand hand,
-            @Nullable ItemStack heldItem, BlockHitResult hit) {
+    protected ItemInteractionResult useItemOn(ItemStack heldItem, BlockState state, Level level, BlockPos pos,
+            Player player, InteractionHand hand, BlockHitResult hit) {
         // In wrench/alternate use mode AE2 tools (wrench, upgrade cards, memory card) handle the
         // interaction themselves.
         if (InteractionUtil.isInAlternateUseMode(player)) {
-            return InteractionResult.PASS;
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
         var blockEntity = this.getBlockEntity(level, pos);
         if (blockEntity == null) {
-            return InteractionResult.PASS;
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
         // Right-clicking with Apotheosis loot (affix gear or a gem) feeds it straight into the machine.
         if (heldItem != null && feedsOnUse(heldItem)) {
             if (level.isClientSide()) {
-                return InteractionResult.SUCCESS;
+                return ItemInteractionResult.SUCCESS;
             }
 
             var leftover = blockEntity.insertForSalvaging(heldItem);
             if (leftover.getCount() == heldItem.getCount()) {
                 // Nothing was accepted (buffer full or filtered out) - fall through to the GUI.
                 openMenu(level, player, blockEntity);
-                return InteractionResult.sidedSuccess(false);
+                return ItemInteractionResult.sidedSuccess(false);
             }
 
             player.setItemInHand(hand, leftover);
-            return InteractionResult.sidedSuccess(false);
+            return ItemInteractionResult.sidedSuccess(false);
         }
 
         openMenu(level, player, blockEntity);
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return ItemInteractionResult.sidedSuccess(level.isClientSide());
     }
 
     /**

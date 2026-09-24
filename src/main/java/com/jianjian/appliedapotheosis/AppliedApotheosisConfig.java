@@ -1,6 +1,6 @@
 package com.jianjian.appliedapotheosis;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
  * Tunables of the ME Salvager, written to {@code config/applied_apotheosis-common.toml}.
@@ -9,16 +9,16 @@ import net.minecraftforge.common.ForgeConfigSpec;
  * restarting the game.
  */
 public final class AppliedApotheosisConfig {
-    public static final ForgeConfigSpec SPEC;
+    public static final ModConfigSpec SPEC;
 
-    public static final ForgeConfigSpec.DoubleValue IDLE_POWER;
-    public static final ForgeConfigSpec.DoubleValue POWER_PER_OPERATION;
-    public static final ForgeConfigSpec.IntValue BASE_TICK_RATE;
-    public static final ForgeConfigSpec.IntValue TICKS_PER_SPEED_CARD;
-    public static final ForgeConfigSpec.ConfigValue<String> MINIMUM_RARITY;
+    public static final ModConfigSpec.DoubleValue IDLE_POWER;
+    public static final ModConfigSpec.DoubleValue POWER_PER_OPERATION;
+    public static final ModConfigSpec.IntValue BASE_TICK_RATE;
+    public static final ModConfigSpec.IntValue TICKS_PER_SPEED_CARD;
+    public static final ModConfigSpec.ConfigValue<String> MINIMUM_RARITY;
 
     static {
-        var builder = new ForgeConfigSpec.Builder();
+        var builder = new ModConfigSpec.Builder();
 
         builder.comment("ME Salvager").push("machine");
 

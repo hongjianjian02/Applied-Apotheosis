@@ -24,7 +24,7 @@ import appeng.api.upgrades.IUpgradeInventory;
 import appeng.api.upgrades.IUpgradeableObject;
 import appeng.api.upgrades.UpgradeInventories;
 import appeng.api.util.AECableType;
-import appeng.blockentity.grid.AENetworkInvBlockEntity;
+import appeng.blockentity.grid.AENetworkedInvBlockEntity;
 import appeng.core.definitions.AEItems;
 import appeng.me.helpers.MachineSource;
 import appeng.util.inv.AppEngInternalInventory;
@@ -32,15 +32,16 @@ import appeng.util.inv.FilteredInternalInventory;
 import appeng.util.inv.filter.IAEItemFilter;
 
 import dev.shadowsoffire.apotheosis.Apotheosis;
-import dev.shadowsoffire.apotheosis.adventure.affix.AffixHelper;
-import dev.shadowsoffire.apotheosis.adventure.affix.salvaging.SalvagingMenu;
-import dev.shadowsoffire.apotheosis.adventure.loot.RarityRegistry;
-import dev.shadowsoffire.apotheosis.adventure.socket.gem.GemItem;
+import dev.shadowsoffire.apotheosis.affix.AffixHelper;
+import dev.shadowsoffire.apotheosis.affix.salvaging.SalvagingMenu;
+import dev.shadowsoffire.apotheosis.loot.RarityRegistry;
+import dev.shadowsoffire.apotheosis.socket.gem.GemItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
@@ -60,7 +61,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * every further card lets it process one more item per tick, while AE2 speed cards shorten the tick
  * interval itself.
  */
-public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
+public class MeSalvagerBlockEntity extends AENetworkedInvBlockEntity
         implements IGridTickable, IUpgradeableObject {
 
     public static final int INPUT_SLOTS = 9;
@@ -151,7 +152,7 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
     }
 
     @Override
-    public void onChangeInventory(InternalInventory inv, int slot) {
+    public void onChangeInventory(AppEngInternalInventory inv, int slot) {
         if (inv == this.upgrades && !isEnabled()) {
             setActive(false);
         }
@@ -289,13 +290,16 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
             return false;
         }
 
+        // Gems no longer carry a rarity in Apotheosis 8.x - they are graded by purity, which the
+        // salvaging recipes handle on their own, so the rarity threshold only gates affix gear.
         var rarity = AffixHelper.getRarity(stack);
         if (!rarity.isBound()) {
-            return false;
+            return GemItem.getGem(stack).isBound();
         }
 
         var minimum = RarityRegistry.INSTANCE.holder(minimumRarity());
-        return minimum.isBound() && rarity.get().isAtLeast(minimum.get());
+        // Apotheosis 8.x dropped LootRarity#isAtLeast; the sort index is the rarity order.
+        return minimum.isBound() && rarity.get().sortIndex() >= minimum.get().sortIndex();
     }
 
     /** The configured minimum rarity ({@code machine.minimumRarity} in the config). */
@@ -317,7 +321,8 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
      * affix list was emptied - is refused.
      */
     public static boolean isApotheosisLoot(ItemStack stack) {
-        return AffixHelper.hasAffixes(stack) || GemItem.getGem(stack).isBound();
+        // Apotheosis 8.x dropped AffixHelper#hasAffixes in favour of the affix map.
+        return !AffixHelper.getAffixes(stack).isEmpty() || GemItem.getGem(stack).isBound();
     }
 
     /** Everything the machine accepts: Apotheosis loot of the required rarity that passes the filter mode. */
@@ -330,9 +335,9 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
     // ------------------------------------------------------------------
 
     @Override
-    public void saveAdditional(CompoundTag data) {
-        super.saveAdditional(data); // saves the input inventory
-        this.upgrades.writeToNBT(data, "upgrades");
+    public void saveAdditional(CompoundTag data, HolderLookup.Provider registries) {
+        super.saveAdditional(data, registries); // saves the input inventory
+        this.upgrades.writeToNBT(data, "upgrades", registries);
         data.putString("filterMode", this.filterMode.name());
         data.putInt("rarityFilter", this.rarityFilter);
 
@@ -340,7 +345,7 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
         for (int i = 0; i < this.output.size(); i++) {
             var stack = this.output.getStackInSlot(i);
             if (!stack.isEmpty()) {
-                outputTag.put("item" + i, stack.save(new CompoundTag()));
+                outputTag.put("item" + i, stack.save(registries));
             }
         }
         data.put("output", outputTag);
@@ -349,27 +354,27 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
         for (int i = 0; i < this.filter.size(); i++) {
             var stack = this.filter.getStackInSlot(i);
             if (!stack.isEmpty()) {
-                filterTag.put("item" + i, stack.save(new CompoundTag()));
+                filterTag.put("item" + i, stack.save(registries));
             }
         }
         data.put("filter", filterTag);
     }
 
     @Override
-    public void loadTag(CompoundTag data) {
-        super.loadTag(data); // loads the input inventory
-        this.upgrades.readFromNBT(data, "upgrades");
+    public void loadTag(CompoundTag data, HolderLookup.Provider registries) {
+        super.loadTag(data, registries); // loads the input inventory
+        this.upgrades.readFromNBT(data, "upgrades", registries);
         this.filterMode = FilterMode.byName(data.getString("filterMode"));
         this.rarityFilter = RarityFilter.clamp(data.getInt("rarityFilter"));
 
         var outputTag = data.getCompound("output");
         for (int i = 0; i < this.output.size(); i++) {
-            this.output.setItemDirect(i, ItemStack.of(outputTag.getCompound("item" + i)));
+            this.output.setItemDirect(i, ItemStack.parseOptional(registries, outputTag.getCompound("item" + i)));
         }
 
         var filterTag = data.getCompound("filter");
         for (int i = 0; i < this.filter.size(); i++) {
-            this.filter.setItemDirect(i, ItemStack.of(filterTag.getCompound("item" + i)));
+            this.filter.setItemDirect(i, ItemStack.parseOptional(registries, filterTag.getCompound("item" + i)));
         }
     }
 
@@ -400,7 +405,7 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
     // ------------------------------------------------------------------
 
     @Override
-    protected boolean readFromStream(FriendlyByteBuf data) {
+    protected boolean readFromStream(RegistryFriendlyByteBuf data) {
         boolean changed = super.readFromStream(data);
         boolean wasActive = this.active;
         this.active = data.readBoolean();
@@ -408,7 +413,7 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
     }
 
     @Override
-    protected void writeToStream(FriendlyByteBuf data) {
+    protected void writeToStream(RegistryFriendlyByteBuf data) {
         super.writeToStream(data);
         data.writeBoolean(this.active);
     }
@@ -432,7 +437,8 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
     public TickingRequest getTickingRequest(IGridNode node) {
         int minTickRate = Math.max(1, AppliedApotheosisConfig.BASE_TICK_RATE.get()
                 - AppliedApotheosisConfig.TICKS_PER_SPEED_CARD.get() * this.speedCards());
-        return new TickingRequest(minTickRate, minTickRate + 20, !this.hasWork(), false);
+        // AE2 19 dropped the canBeAlerted flag from TickingRequest.
+        return new TickingRequest(minTickRate, minTickRate + 20, !this.hasWork());
     }
 
     /** Ticks between two cycles with the cards currently installed. */
@@ -521,7 +527,8 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
             if (!isAccepted(stack)) {
                 continue;
             }
-            if (SalvagingMenu.findMatch(this.level, stack) == null) {
+            // Apotheosis 8.x returns every matching recipe instead of a single one.
+            if (SalvagingMenu.findMatch(this.level, stack).isEmpty()) {
                 continue;
             }
             return slot;
@@ -541,7 +548,8 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
         }
 
         var single = this.input.getStackInSlot(slot).copyWithCount(1);
-        var results = SalvagingMenu.salvageItem(this.level, single);
+        // Apotheosis 8.x replaced salvageItem() with getSalvageResults(), which rolls the counts.
+        var results = SalvagingMenu.getSalvageResults(this.level, single);
         if (results.isEmpty()) {
             // Only reachable if the recipe manager was reloaded between the probe and here.
             return false;

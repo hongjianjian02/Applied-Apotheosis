@@ -5,7 +5,7 @@ import com.jianjian.appliedapotheosis.blockentity.MeSalvagerBlockEntity;
 import com.jianjian.appliedapotheosis.menu.MeSalvagerMenu;
 
 import appeng.menu.MenuOpener;
-import appeng.menu.locator.MenuLocator;
+import appeng.menu.locator.MenuHostLocator;
 import appeng.menu.locator.MenuLocators;
 
 import net.minecraft.network.chat.Component;
@@ -15,25 +15,24 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraftforge.common.extensions.IForgeMenuType;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 public final class ModMenus {
-    public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(ForgeRegistries.MENU_TYPES,
+    public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU,
             AppliedApotheosis.MODID);
 
-    public static final RegistryObject<MenuType<MeSalvagerMenu>> ME_SALVAGER = MENUS.register("me_salvager",
+    public static final DeferredHolder<MenuType<?>, MenuType<MeSalvagerMenu>> ME_SALVAGER = MENUS.register("me_salvager",
             ModMenus::createMeSalvagerMenu);
 
     private ModMenus() {
     }
 
     private static MenuType<MeSalvagerMenu> createMeSalvagerMenu() {
-        var type = IForgeMenuType.create(ModMenus::createMenuFromNetwork);
+        var type = IMenuTypeExtension.create(ModMenus::createMenuFromNetwork);
         // Lets AE2 route MenuOpener.open(...) to our own open method.
         MenuOpener.addOpener(type, ModMenus::openMenu);
         return type;
@@ -41,7 +40,7 @@ public final class ModMenus {
 
     /** Called on the client when the server opens the menu there. */
     private static MeSalvagerMenu createMenuFromNetwork(int containerId, Inventory playerInventory,
-            net.minecraft.network.FriendlyByteBuf buffer) {
+            net.minecraft.network.RegistryFriendlyByteBuf buffer) {
         var locator = MenuLocators.readFromPacket(buffer);
         var host = locator.locate(playerInventory.player, MeSalvagerBlockEntity.class);
         if (host == null) {
@@ -51,7 +50,7 @@ public final class ModMenus {
     }
 
     /** Called on the server to open the menu for a player. */
-    private static boolean openMenu(Player player, MenuLocator locator, boolean fromSubMenu) {
+    private static boolean openMenu(Player player, MenuHostLocator locator, boolean fromSubMenu) {
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return false;
         }
@@ -65,7 +64,8 @@ public final class ModMenus {
                 (containerId, inventory, p) -> new MeSalvagerMenu(containerId, inventory, host),
                 Component.translatable("container.applied_apotheosis.me_salvager"));
 
-        NetworkHooks.openScreen(serverPlayer, menu, buffer -> MenuLocators.writeToPacket(buffer, locator));
+        // NeoForge 1.21 opens menus through the player instead of NetworkHooks.
+        serverPlayer.openMenu(menu, buffer -> MenuLocators.writeToPacket(buffer, locator));
         return true;
     }
 

@@ -5,16 +5,16 @@ import com.jianjian.appliedapotheosis.block.MeSalvagerBlock;
 import appeng.api.upgrades.Upgrades;
 import appeng.core.definitions.AEItems;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 public final class ModBlocks {
-    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS,
+    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(Registries.BLOCK,
             AppliedApotheosis.MODID);
 
-    public static final RegistryObject<Block> ME_SALVAGER = BLOCKS.register("me_salvager", MeSalvagerBlock::new);
+    public static final DeferredHolder<Block, Block> ME_SALVAGER = BLOCKS.register("me_salvager", MeSalvagerBlock::new);
 
     /** Maximum number of each supported card a single ME Salvager accepts. */
     public static final int MAX_SALVAGE_CARDS = 3;
