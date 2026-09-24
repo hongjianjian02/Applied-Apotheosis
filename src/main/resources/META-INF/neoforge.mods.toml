@@ -1,0 +1,49 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+issueTrackerURL="https://github.com/hongjianjian02/Applied-Apotheosis/issues"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+description='''${mod_description}'''
+logoFile="applied_apotheosis_logo.png"
+displayURL="https://github.com/hongjianjian02/Applied-Apotheosis"
+updateJSONURL="https://raw.githubusercontent.com/hongjianjian02/Applied-Apotheosis/main/updates.json"
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="REQUIRED"
+    versionRange="${neoForge_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="REQUIRED"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="ae2"
+    type="REQUIRED"
+    versionRange="${ae2_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="guideme"
+    type="REQUIRED"
+    versionRange="${guideme_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="apotheosis"
+    type="REQUIRED"
+    versionRange="${apotheosis_version_range}"
+    ordering="NONE"
+    side="BOTH"
