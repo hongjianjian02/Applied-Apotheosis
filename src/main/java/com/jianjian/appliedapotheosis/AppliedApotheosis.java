@@ -35,6 +35,7 @@ public class AppliedApotheosis {
         container.registerConfig(ModConfig.Type.COMMON, AppliedApotheosisConfig.SPEC);
 
         modBus.addListener(this::commonSetup);
+        modBus.addListener(com.jianjian.appliedapotheosis.registry.ModCapabilities::register);
 
         if (com.jianjian.appliedapotheosis.dev.SelfTest.isEnabled()) {
             LOGGER.warn("Applied Apotheosis self-test enabled - the server will shut down after verification");

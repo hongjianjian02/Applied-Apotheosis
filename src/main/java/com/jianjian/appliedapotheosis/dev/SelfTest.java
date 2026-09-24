@@ -15,6 +15,7 @@ import appeng.api.upgrades.Upgrades;
 import appeng.blockentity.storage.MEChestBlockEntity;
 import appeng.core.definitions.AEBlocks;
 import appeng.core.definitions.AEItems;
+import appeng.me.helpers.IGridConnectedBlockEntity;
 import appeng.me.helpers.MachineSource;
 import dev.shadowsoffire.apotheosis.tiers.GenContext;
 import dev.shadowsoffire.apotheosis.Apotheosis;
@@ -67,13 +68,9 @@ public final class SelfTest {
 
     public static void onServerStarted(ServerStartedEvent event) {
         level = event.getServer().overworld();
-        try {
-            setup();
-            NeoForge.EVENT_BUS.addListener(SelfTest::onServerTick);
-        } catch (Throwable t) {
-            AppliedApotheosis.LOGGER.error("[selftest] setup FAILED", t);
-            event.getServer().halt(false);
-        }
+        // The test area is built on the first server tick rather than here: AE2 19 only picks up
+        // grid nodes once the level has ticked, and blocks placed before that never join a grid.
+        NeoForge.EVENT_BUS.addListener(SelfTest::onServerTick);
     }
 
     private static void setup() {
@@ -127,16 +124,27 @@ public final class SelfTest {
         var cellLeftover = chest.getInternalInventory().addItems(AEItems.ITEM_CELL_1K.stack());
         log("inserted 1k storage cell into ME chest, leftover = {}", cellLeftover.getCount());
 
-        // Grid diagnostics: is the energy cell present and does the machine's grid see its power?
+        // Grid diagnostics: does anything in this test area actually join a grid? The charger is the
+        // control - it is AE2's own machine, placed the same way.
         {
-            var cellBe = level.getBlockEntity(powerPos);
-            var node = salvager.getMainNode();
-            var grid = node.getGrid();
-            log("grid check: cell BE = {} | grid = {} | stored power = {} | powered = {}",
-                    cellBe == null ? "none" : cellBe.getClass().getSimpleName(),
-                    grid != null,
-                    grid == null ? -1 : grid.getEnergyService().getStoredPower(),
-                    node.isPowered());
+            var controlPos = powerPos.east();
+            level.setBlockAndUpdate(controlPos, AEBlocks.CHARGER.block().defaultBlockState());
+
+            log("our machine node: grid = {} | powered = {} | ready = {}",
+                    salvager.getMainNode().getGrid() != null,
+                    salvager.getMainNode().isPowered(),
+                    salvager.getMainNode().isReady());
+
+            var chestNode = chest.getActionableNode();
+            log("ME chest node: grid = {} | powered = {}", chestNode != null && chestNode.getGrid() != null,
+                    chestNode != null && chestNode.isPowered());
+
+            var controlBe = level.getBlockEntity(controlPos);
+            var controlNode = controlBe instanceof IGridConnectedBlockEntity host ? host.getActionableNode() : null;
+            log("control (AE2 charger at {}): BE = {} | grid = {} | powered = {}",
+                    controlPos, controlBe == null ? "none" : controlBe.getClass().getSimpleName(),
+                    controlNode != null && controlNode.getGrid() != null,
+                    controlNode != null && controlNode.isPowered());
         }
 
         // install one salvage card, then feed the machine the affix gear
@@ -385,6 +393,21 @@ public final class SelfTest {
         return count;
     }
 
+    /** How many nodes the given grid holds; a machine that failed to connect sits alone in one. */
+    private static int nodeCount(appeng.api.networking.IGrid grid) {
+        return com.google.common.collect.Iterables.size(grid.getNodes());
+    }
+
+    /** Grid of the control charger placed next to the energy cell, or null. */
+    private static appeng.api.networking.IGrid controlGrid() {
+        var be = level.getBlockEntity(salvager.getBlockPos().east().east());
+        if (be instanceof IGridConnectedBlockEntity host) {
+            var node = host.getActionableNode();
+            return node == null ? null : node.getGrid();
+        }
+        return null;
+    }
+
     private static void onServerTick(ServerTickEvent.Post event) {
         if (finished) {
             return;
@@ -392,8 +415,15 @@ public final class SelfTest {
         ticks++;
 
         if (ticks == 1) {
-            // The storage cell only comes online once the grid has formed, so wipe it on the first
-            // tick and feed the loot right after: the totals below are then exactly this run's.
+            // Build the test area now that the level has ticked once (see onServerStarted), then
+            // wipe the storage cell and feed the loot: the totals below are then exactly this run's.
+            try {
+                setup();
+            } catch (Throwable t) {
+                AppliedApotheosis.LOGGER.error("[selftest] setup FAILED", t);
+                level.getServer().halt(false);
+                return;
+            }
             clearNetworkStorage();
             feedLoot();
         }
@@ -404,10 +434,16 @@ public final class SelfTest {
         }
 
         if (ticks % LOG_EVERY == 0) {
-            log("tick {}: node ready={} active={} powered={} | input={} item(s) | network=[{}]",
+            var machineGrid = salvager.getMainNode().getGrid();
+            var cellBe = level.getBlockEntity(salvager.getBlockPos().east());
+            var cellGridNode = cellBe instanceof IGridConnectedBlockEntity host ? host.getGridNode() : null;
+            log("tick {}: ready={} active={} powered={} | our grid nodes={} | cell grid nodes={} | charger grid nodes={} | input={} | network=[{}]",
                     ticks, salvager.getMainNode().isReady(), salvager.getMainNode().isActive(),
-                    salvager.getMainNode().isPowered(), inputCount(),
-                    networkContents());
+                    salvager.getMainNode().isPowered(),
+                    machineGrid == null ? -1 : nodeCount(machineGrid),
+                    cellGridNode == null || cellGridNode.getGrid() == null ? -1 : nodeCount(cellGridNode.getGrid()),
+                    controlGrid() == null ? -1 : nodeCount(controlGrid()),
+                    inputCount(), networkContents());
         }
 
         // Give the machine a few more grid ticks to flush its output buffer into the network.
@@ -428,10 +464,14 @@ public final class SelfTest {
             log("ME network storage now holds = [{}]", contents);
 
             var mythic = RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get();
-            log("expected material from the affix item = {}", new ItemStack(mythic.material().value()));
+            var mythicMaterial = new ItemStack(mythic.material().value());
+            log("expected material from the affix item = {}", mythicMaterial);
 
             expect("input buffer is empty again", inputCount(), 0);
-            expect("network holds the salvaged material", contents.contains("mythic_material"), true);
+            // Look the material up by name instead of hard-coding it: Apotheosis renames materials
+            // between versions (mythic_material became godforged_pearl in 8.x).
+            expect("network holds the salvaged material",
+                    contents.contains(String.valueOf(BuiltInRegistries.ITEM.getKey(mythicMaterial.getItem()))), true);
             if (!testGem.isEmpty()) {
                 expect("network holds the gem dust", contents.contains("gem_dust"), true);
             }
