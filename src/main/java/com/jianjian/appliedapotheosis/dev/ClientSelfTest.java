@@ -4,6 +4,7 @@ import com.jianjian.appliedapotheosis.AppliedApotheosis;
 import com.jianjian.appliedapotheosis.blockentity.MeSalvagerBlockEntity;
 import com.jianjian.appliedapotheosis.filter.FilterMode;
 import com.jianjian.appliedapotheosis.filter.RarityFilter;
+import com.jianjian.appliedapotheosis.client.MeSalvagerScreen;
 import com.jianjian.appliedapotheosis.menu.MeSalvagerMenu;
 import com.jianjian.appliedapotheosis.registry.ModBlocks;
 import com.jianjian.appliedapotheosis.registry.ModItems;
@@ -97,7 +98,21 @@ public final class ClientSelfTest {
                 }
             }
             default -> {
-                if (ticks > 20) {
+                // One screenshot per filter mode: AE2 19 redrew its icon sheet and some glyphs the
+                // 1.20.1 build used are gone, which is only visible on the button itself.
+                if (ticks == 20) {
+                    setMode(minecraft, FilterMode.DISABLED);
+                } else if (ticks == 30) {
+                    grab(minecraft, "disabled");
+                } else if (ticks == 50) {
+                    setMode(minecraft, FilterMode.WHITELIST);
+                } else if (ticks == 60) {
+                    grab(minecraft, "whitelist");
+                } else if (ticks == 80) {
+                    setMode(minecraft, FilterMode.BLACKLIST);
+                } else if (ticks == 90) {
+                    grab(minecraft, "blacklist");
+                } else if (ticks > 110) {
                     done = true;
                     log("finished, screen still open = {}", minecraft.screen);
                 }
@@ -232,14 +247,32 @@ public final class ClientSelfTest {
     }
 
     /**
-     * Reports where AE2 ended up placing the slots and widgets, and checks the positions our GUI
-     * texture bakes its recesses at against the ones AE2 actually uses at runtime.
-     * <p>
-     * The player inventory is placed by AE2's own {@code common/player_inventory.json} include, and
-     * those offsets are version specific: AE2 15 put the inventory at bottom 82 and the hotbar at 24,
-     * AE2 19 uses 84 and 26. On the 205 pixel tall dialog that is 121/139/157 + 179, which is what
-     * {@code GenGui} bakes. When AE2 changes them again the slots drift out of their recesses, which
-     * is exactly the "the UI looks offset" report - this check turns it into a loud failure instead.
+     * Cycles the machine's filter mode to the given one by clicking the button's action. The menu
+     * field only updates once the server round-trip lands, so the loop is bounded - spinning until
+     * the field matches froze the client.
+     */
+    private static void setMode(Minecraft minecraft, FilterMode wanted) {
+        if (minecraft.player != null && minecraft.player.containerMenu instanceof MeSalvagerMenu menu) {
+            for (int i = 0; i < 3 && menu.filterMode != wanted; i++) {
+                menu.cycleFilterMode();
+            }
+            log("filter mode asked for {}, menu now reports {}", wanted, menu.filterMode);
+        }
+    }
+
+    private static void grab(Minecraft minecraft, String label) {
+        log("screenshot for mode {}", label);
+        Screenshot.grab(minecraft.gameDirectory, minecraft.getMainRenderTarget(),
+                message -> log("screenshot ({}): {}", label, message.getString()));
+    }
+
+    /** Reports where AE2 ended up placing the slots and widgets, to check the layout from the log. */
+    /**
+     * Reports where AE2 placed the slots and widgets, and checks the positions our GUI texture bakes
+     * its recesses at against the ones AE2 uses at runtime. The player inventory is positioned by
+     * AE2's own {@code common/player_inventory.json} include and those offsets are version specific
+     * (AE2 15: bottom 82/24, AE2 19: 84/26), so a drift shows up as slots sitting outside their
+     * recesses - the "the UI looks offset" report. This turns that into a loud log line.
      */
     private static void logGuiLayout(Minecraft minecraft) {
         if (!(minecraft.player.containerMenu instanceof MeSalvagerMenu menu)) {
@@ -256,6 +289,27 @@ public final class ClientSelfTest {
 
         var config = menu.getSlots(SlotSemantics.CONFIG).get(0);
         log("GUI layout: filter slots at {} / {}", config.x, config.y);
+
+        if (minecraft.screen instanceof MeSalvagerScreen screen) {
+            var button = screen.filterModeButton();
+            log("GUI layout: filter mode button at {},{} size {}x{} visible {} | screen origin {},{}",
+                    button.getX(), button.getY(), button.getWidth(), button.getHeight(), button.visible,
+                    screen.getGuiLeft(), screen.getGuiTop());
+
+            // What AE2 read out of our style sheet, and where the widgets actually ended up: this is
+            // how a widget whose style entry is ignored can be told apart from a wrong style entry.
+            for (var id : new String[] { "filterMode", "rarityFilter", "progressBar" }) {
+                var widget = screen.getStyle().getWidget(id);
+                log("GUI style: {} -> left={} top={} width={} height={}", id,
+                        widget == null ? "null" : widget.getLeft(),
+                        widget == null ? "-" : widget.getTop(),
+                        widget == null ? "-" : widget.getWidth(),
+                        widget == null ? "-" : widget.getHeight());
+            }
+            var chips = screen.rarityFilterWidget();
+            log("GUI style: rarity chips actually at {},{} size {}x{}",
+                    chips.getX(), chips.getY(), chips.getWidth(), chips.getHeight());
+        }
 
         // Baked into the background texture by GenGui, see there for how the numbers are derived.
         final int panelHeight = 205;

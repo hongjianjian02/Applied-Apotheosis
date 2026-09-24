@@ -42,6 +42,19 @@ public class MeSalvagerScreen extends AEBaseScreen<MeSalvagerMenu> {
         this.widgets.add("progressBar", this.progressBar);
     }
 
+    /**
+     * Dev self-test hook: lets the layout check report where the filter mode button ended up, so a
+     * missing icon can be told apart from a missing button.
+     */
+    public FilterModeButton filterModeButton() {
+        return this.filterModeButton;
+    }
+
+    /** Dev self-test hook: the rarity chips widget, to check its position against the style sheet. */
+    public RarityFilterWidget rarityFilterWidget() {
+        return this.rarityFilter;
+    }
+
     @Override
     protected void updateBeforeRender() {
         super.updateBeforeRender();

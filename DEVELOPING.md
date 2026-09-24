@@ -37,6 +37,13 @@
   `guis/molecular_assembler.png`、`inscriber.png`、`vibchamber.png` 逐像素量出来的，
   所以 **1.21.1 分支的贴图和 `RarityFilterWidget` 用的是 19 的色板，1.20.1 分支用 15 的**，
   两个分支不要互相同步这两处。
+- **AE2 19 的 `Icon.WHITELIST` / `Icon.BLACKLIST` 是坏条目**：贴图已从它的图标集里删掉，
+  AE2 自己也不再使用（只有 `Icon` 类还留着这两个常量），画出来是 Minecraft 的**品红缺贴图色** ✗。
+  1.21.1 分支改用 AE2 19 自己 `SettingToggleButton` 在用的
+  `Icon.STORAGE_FILTER_EXTRACTABLE_ONLY` / `_NONE`（语义同样是"只放行这些 / 这些绝不放行"）。
+  客户端自检会把过滤模式依次切一遍并各截一张图，所以这类"图标消失"能被一眼看出来。
+- **AE2 19 的界面里，widget 的 `getX()/getY()` 是含 GUI 原点的屏幕坐标**（样式表里的
+  `left/top` 是相对坐标）：日志里看到 177,33 而 JSON 写 52,16 是正常的，别当成偏移 ✗。
 - 开发环境窗口失焦会自动暂停、把界面关掉 —— 客户端自检里设了
   `options.pauseOnLostFocus = false`，否则截图拍到的是暂停菜单。
 - **GUI 背景贴图里的槽位凹槽必须和 AE2 运行时的槽位位置一致**：玩家背包是由 AE2 自己的
