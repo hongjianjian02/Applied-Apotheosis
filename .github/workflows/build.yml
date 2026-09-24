@@ -1,13 +1,17 @@
 name: Build
 
-# 每次推送到 main、每个 PR、以及手动触发时：编译 + 跑服务端自检。
+# 每次推送到 main / 1.21.1-neoforge、每个 PR、以及手动触发时：编译 + 跑服务端自检。
 # 自检（gradlew runServer -Pselftest）会真的起一个服务器，断言注册、卡牌并行度、
 # 稀有度门槛、黑白名单、稀有度筛选、幽灵过滤槽、宝石拆解与产物入网；
 # 任何一条不成立就以非零状态退出，所以这个工作流挂了就说明有规则被破坏了。
+#
+# 两条分支的构建命令完全一样，区别只在 JDK：main 是 1.20.1 / Forge，用 JDK 17；
+# 1.21.1-neoforge 是 1.21.1 / NeoForge，必须用 JDK 21。
 on:
   push:
     branches:
       - main
+      - '1.21.1-neoforge'
   pull_request:
   workflow_dispatch:
 
@@ -19,11 +23,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up JDK 17
+      - name: Pick the JDK for this branch
+        id: jdk
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "1.21.1-neoforge" ]; then
+            echo "版本 1.21.1 / NeoForge -> JDK 21"
+            echo "version=21" >> "$GITHUB_OUTPUT"
+          else
+            echo "版本 1.20.1 / Forge -> JDK 17"
+            echo "version=17" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up JDK
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: ${{ steps.jdk.outputs.version }}
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -40,6 +55,6 @@ jobs:
       - name: Upload the jar
         uses: actions/upload-artifact@v4
         with:
-          name: applied-apotheosis-jar
+          name: applied-apotheosis-${{ github.ref_name }}
           path: build/libs/*.jar
           if-no-files-found: error

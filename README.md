@@ -1,5 +1,9 @@
 # Applied Apotheosis（应用神化）
 
+> **版本导航**：这里（`main` 分支）是 **1.20.1 / Forge** 版本。
+> **1.21.1 / NeoForge** 版本在 [`1.21.1-neoforge` 分支](https://github.com/hongjianjian02/Applied-Apotheosis/tree/1.21.1-neoforge)，
+> 它的依赖、安装与配置说明以那条分支的 README 为准。
+
 一个 Minecraft **Forge 1.20.1** 模组，作为 **Applied Energistics 2 (AE2)** 的附属：
 把 **Apotheosis（神化）** 的词缀装备和**宝石**丢进「ME 分解器」，它会按神化自己的规则拆成材料与宝石粉，
 并**直接把产物送进你的 ME 网络**。
