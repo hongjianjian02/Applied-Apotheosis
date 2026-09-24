@@ -1,6 +1,8 @@
 name: Release
 
-# 打 tag（形如 v1.0.0）时自动构建，并把 mod jar 挂到 GitHub Release 上。
+# 打 tag 时自动构建，并把 mod jar 挂到 GitHub Release 上。
+#   main（1.20.1 / Forge）        -> v1.0.3
+#   1.21.1-neoforge（1.21.1 / NeoForge）-> v1.0.3-1.21.1
 # 也可以在 GitHub 网页上「Create a new release」里新建 tag，本工作流会把 jar 补传上去。
 #
 # ⚠️ 手动运行（workflow_dispatch）时必须填一个**已存在的版本 tag**：早期版本会直接拿
@@ -13,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: '要发布的版本号：v1.0.1 或 1.0.1 都行（需与 gradle.properties 的 mod_version 一致）。分支名会被拒绝。'
+        description: '要发布的版本号：v1.0.3、1.0.3，或 1.21.1 分支的 v1.0.3-1.21.1（前半段需与 gradle.properties 的 mod_version 一致）。分支名会被拒绝。'
         required: true
         type: string
 
@@ -28,11 +30,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up JDK 17
+      # 1.20.1 用 JDK 17，1.21.1 必须用 JDK 21：直接看被签出的 gradle.properties。
+      - name: Pick the JDK for this release
+        id: jdk
+        run: |
+          MC=$(grep '^minecraft_version=' gradle.properties | cut -d= -f2 | tr -d ' \r')
+          echo "minecraft_version=${MC}"
+          case "$MC" in
+            1.21*) echo "version=21" >> "$GITHUB_OUTPUT" ;;
+            *)     echo "version=17" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Set up JDK
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: ${{ steps.jdk.outputs.version }}
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -60,15 +73,18 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "publishing ${TAG}"
 
-      # 防止 tag 与 gradle.properties 里的 mod_version 不一致
+      # 防止 tag 与 gradle.properties 里的 mod_version 不一致。
+      # 1.21.1 分支的 tag 会带 MC 版本后缀（v1.0.3-1.21.1），比较时只看前半段。
       - name: Check tag matches mod_version
         env:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
           VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2 | tr -d ' \r')
-          echo "tag=${TAG}  mod_version=v${VERSION}"
-          if [ "v${VERSION}" != "${TAG}" ]; then
-            echo "::error::tag ${TAG} 指向的提交里 mod_version=v${VERSION}，两者不一致——说明 tag 打在了"还没提交版本号"的那个提交上。修法：先把提交版本号的 commit 推上去，再把 tag 挪过来：git push origin main && git push origin :refs/tags/${TAG} && git tag -a ${TAG} -m ${TAG} && git push origin ${TAG}"
+          BASE=${TAG#v}
+          BASE=${BASE%%-*}
+          echo "tag=${TAG}  mod_version=v${VERSION}  (比较 ${BASE})"
+          if [ "${BASE}" != "${VERSION}" ]; then
+            echo "::error::tag ${TAG} 指向的提交里 mod_version=v${VERSION}，两者不一致——说明 tag 打在了"还没提交版本号"的那个提交上。修法：先把提交版本号的 commit 推上去，再把 tag 挪过来：git push origin <分支> && git push origin :refs/tags/${TAG} && git tag -a ${TAG} -m ${TAG} && git push origin ${TAG}"
             exit 1
           fi
 

@@ -7,7 +7,9 @@ version = mod_version
 group = mod_group_id
 
 base {
-    archivesName = mod_id
+    // Include the Minecraft version: the 1.20.1 branch ships applied_apotheosis-1.0.3.jar, this
+    // one ships applied_apotheosis-1.21.1-1.0.3.jar, so the two never get confused in a download list.
+    archivesName = "${mod_id}-${minecraft_version}"
 }
 
 // 1.21.1 runs on Java 21.
