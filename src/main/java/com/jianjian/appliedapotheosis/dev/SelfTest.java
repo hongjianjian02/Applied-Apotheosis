@@ -127,6 +127,18 @@ public final class SelfTest {
         var cellLeftover = chest.getInternalInventory().addItems(AEItems.ITEM_CELL_1K.stack());
         log("inserted 1k storage cell into ME chest, leftover = {}", cellLeftover.getCount());
 
+        // Grid diagnostics: is the energy cell present and does the machine's grid see its power?
+        {
+            var cellBe = level.getBlockEntity(powerPos);
+            var node = salvager.getMainNode();
+            var grid = node.getGrid();
+            log("grid check: cell BE = {} | grid = {} | stored power = {} | powered = {}",
+                    cellBe == null ? "none" : cellBe.getClass().getSimpleName(),
+                    grid != null,
+                    grid == null ? -1 : grid.getEnergyService().getStoredPower(),
+                    node.isPowered());
+        }
+
         // install one salvage card, then feed the machine the affix gear
         var cardLeftover = salvager.getUpgrades().addItems(new ItemStack(ModItems.SALVAGE_CARD.get()));
         log("installed salvage card (leftover {}) -> installed = {}", cardLeftover.getCount(),

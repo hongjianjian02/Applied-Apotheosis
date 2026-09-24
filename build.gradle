@@ -69,10 +69,23 @@ dependencies {
     // GuideME is a mandatory dependency of AE2 19.x
     implementation "org.appliedenergistics:guideme:${guideme_version}"
 
-    // Apotheosis and its mandatory dependencies
-    implementation "dev.shadowsoffire:Apotheosis:${apotheosis_version}"
-    implementation "dev.shadowsoffire:Placebo:${placebo_version}"
-    implementation "dev.shadowsoffire:ApothicAttributes:${apothic_attributes_version}"
+    // Apotheosis and its mandatory dependencies. Its optional integrations (Curios, Patchouli,
+    // Gateways, Apothic Spawners/Enchanting) are excluded: their POMs are not on the mavens we
+    // declare, and a dev environment does not need them.
+    implementation("dev.shadowsoffire:Apotheosis:${apotheosis_version}") {
+        exclude group: 'top.theillusivec4.curios'
+        exclude group: 'vazkii.patchouli'
+        exclude group: 'dev.shadowsoffire.apothic_spawners'
+        exclude group: 'dev.shadowsoffire.apothic_enchanting'
+    }
+    implementation("dev.shadowsoffire:Placebo:${placebo_version}") {
+        exclude group: 'top.theillusivec4.curios'
+        exclude group: 'vazkii.patchouli'
+    }
+    implementation("dev.shadowsoffire:ApothicAttributes:${apothic_attributes_version}") {
+        exclude group: 'top.theillusivec4.curios'
+        exclude group: 'vazkii.patchouli'
+    }
 }
 
 // Expand the properties declared in gradle.properties into the mod metadata.

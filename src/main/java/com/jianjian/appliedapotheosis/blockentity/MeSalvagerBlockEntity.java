@@ -1,5 +1,6 @@
 package com.jianjian.appliedapotheosis.blockentity;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -108,6 +109,9 @@ public class MeSalvagerBlockEntity extends AENetworkedInvBlockEntity
         this.getMainNode()
                 .setIdlePowerUsage(AppliedApotheosisConfig.IDLE_POWER.get())
                 .setFlags()
+                // AE2 19 does not expose a managed node on any side by default, so without this the
+                // machine never joins a grid (no power, no network, no salvaging).
+                .setExposedOnSides(EnumSet.allOf(Direction.class))
                 .addService(IGridTickable.class, this);
 
         this.upgrades = UpgradeInventories.forMachine(ModItems.ME_SALVAGER.get(), UPGRADE_SLOTS,
