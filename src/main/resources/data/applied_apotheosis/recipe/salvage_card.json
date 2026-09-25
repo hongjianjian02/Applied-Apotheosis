@@ -18,7 +18,8 @@
     " L "
   ],
   "result": {
-    "item": "applied_apotheosis:salvage_card"
-  },
+      "id": "applied_apotheosis:salvage_card",
+      "count": 1
+    },
   "show_notification": true
 }

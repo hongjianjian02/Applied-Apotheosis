@@ -24,7 +24,8 @@
     "GLG"
   ],
   "result": {
-    "item": "applied_apotheosis:me_salvager"
-  },
+      "id": "applied_apotheosis:me_salvager",
+      "count": 1
+    },
   "show_notification": true
 }

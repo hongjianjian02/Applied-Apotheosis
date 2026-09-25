@@ -84,6 +84,14 @@ public final class SelfTest {
                 Upgrades.getMaxInstallable(AEItems.SPEED_CARD, ModItems.ME_SALVAGER.get()),
                 MeSalvagerBlockEntity.UPGRADE_SLOTS);
 
+        // Data pack sanity: 1.21 moved the shaped recipe result from {"item": ...} to {"id": ...},
+        // and a recipe that fails to parse simply does not exist in game - which is invisible until
+        // a player looks for it in the recipe book.
+        for (var id : new String[] { "me_salvager", "salvage_card" }) {
+            expect("recipe " + id + " loads", level.getRecipeManager()
+                    .byKey(AppliedApotheosis.id(id)).isPresent(), true);
+        }
+
         // --- the mechanic itself, straight through the Apotheosis API ---
         LootRarity mythic = RarityRegistry.INSTANCE.holder(Apotheosis.loc("mythic")).get();
         rolledGear = LootController.createLootItem(new ItemStack(Items.DIAMOND_SWORD), mythic,
