@@ -11,6 +11,13 @@
   `-Dhttps.proxyHost`。本机因此在 `gradle.properties`（Gradle 全局那份，不在仓库里）里写了
   `systemProp.https.proxyHost=127.0.0.1` / `systemProp.https.proxyPort=7897`。没有代理会卡在
   `maven.neoforged.net` 握手失败。
+  ⚠️ 但代理**只能给 neoforged 用**：把 `libraries.minecraft.net` 也代理掉会让 ForgeGradle 报
+  `Failed to validate certificate for host 'https://libraries.minecraft.net/'`（它的证书校验不认
+  代理的证书），**1.20.1 那条分支就构建不了了**。所以 `nonProxyHosts` 里要排除
+  `libraries.minecraft.net`、`*.minecraft.net`、`*.mojang.com`、`maven.minecraftforge.net`、
+  `*.forgecdn.net` 和 gradle 插件门户。
+- **幽灵过滤槽"取消不掉"**：AE2 用 `FakeSlot.canSetFilterTo(新值)` 校验要写入的值，**清空时新值是空栈**，
+  所以重写这个方法时**必须放行空栈**，否则标记上去就删不掉了（自检里有一条断言钉住这点）。
 - **AE2 19 把"网格成员"改成了 NeoForge 方块能力**（`AECapabilities.IN_WORLD_GRID_NODE_HOST`），
   而且只为 AE2 自己的方块实体类型注册。**附属模组必须自己注册**，否则机器的节点永远连不上邻居：
   表现是机器单独待在一个网格里、`powered=false`、什么都不拆（自检的 3 条网络断言会失败）。

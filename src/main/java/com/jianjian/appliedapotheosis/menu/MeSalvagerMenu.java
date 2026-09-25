@@ -205,7 +205,11 @@ public class MeSalvagerMenu extends AEBaseMenu implements IProgressProvider {
 
         @Override
         public boolean canSetFilterTo(ItemStack stack) {
-            return MeSalvagerBlockEntity.hasRequiredRarity(stack) && super.canSetFilterTo(stack);
+            // Clearing an entry has to stay possible. AE2 validates the value it is about to store
+            // through this method, and clearing stores an empty stack - refusing empty stacks here is
+            // what made marked entries impossible to remove.
+            return stack.isEmpty()
+                    || (MeSalvagerBlockEntity.hasRequiredRarity(stack) && super.canSetFilterTo(stack));
         }
     }
 }
