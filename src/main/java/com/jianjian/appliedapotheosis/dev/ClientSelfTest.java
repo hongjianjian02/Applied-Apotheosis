@@ -311,8 +311,11 @@ public final class ClientSelfTest {
                     chips.getX(), chips.getY(), chips.getWidth(), chips.getHeight());
         }
 
-        // Baked into the background texture by GenGui, see there for how the numbers are derived.
-        final int panelHeight = 205;
+        // Read the panel height from the style rather than hard-coding it: this check is about AE2's
+        // inventory offsets changing (bottom 84 / hotbar 26), not about our own dialog height.
+        final int panelHeight = minecraft.screen instanceof MeSalvagerScreen meSalvager
+                ? meSalvager.getStyle().getBackground().getSrcHeight()
+                : 223;
         final int expectedInvTop = panelHeight - 84;   // AE2 19: PLAYER_INVENTORY bottom 84
         final int expectedHotbarTop = panelHeight - 26; // AE2 19: PLAYER_HOTBAR bottom 26
 
