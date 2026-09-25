@@ -341,6 +341,9 @@ public final class SelfTest {
         expect("filter slot refuses normal placement", markerSlot.mayPlace(rolledGear.copy()), false);
         expect("filter slot accepts loot markers", markerSlot.canSetFilterTo(rolledGear.copy()), true);
         expect("filter slot rejects junk markers", markerSlot.canSetFilterTo(new ItemStack(Items.DIAMOND)), false);
+        // Clearing stores an empty stack and AE2 validates it through the same method, so refusing
+        // it here is what made marked entries impossible to remove.
+        expect("filter slot allows clearing a marker", markerSlot.canSetFilterTo(ItemStack.EMPTY), true);
         expect("right-click feeds affix gear", MeSalvagerBlock.feedsOnUse(rolledGear.copy()), true);
         if (!testGem.isEmpty()) {
             expect("right-click feeds gems", MeSalvagerBlock.feedsOnUse(testGem.copy()), true);

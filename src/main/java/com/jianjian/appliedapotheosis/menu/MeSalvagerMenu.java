@@ -194,7 +194,8 @@ public class MeSalvagerMenu extends AEBaseMenu implements IProgressProvider {
 
     /**
      * Filter entries are markers, not real items: the slot refuses normal placement and only accepts
-     * Apotheosis loot as a marker, so marking something never costs the player the item.
+     * Apotheosis loot as a marker, so marking something never costs the player the item. An empty
+     * stack is always accepted, which is what lets a marker be cleared again.
      * <p>
      * Public so the developer self-test can exercise the marker rules without a player.
      */
@@ -205,7 +206,11 @@ public class MeSalvagerMenu extends AEBaseMenu implements IProgressProvider {
 
         @Override
         public boolean canSetFilterTo(ItemStack stack) {
-            return MeSalvagerBlockEntity.hasRequiredRarity(stack) && super.canSetFilterTo(stack);
+            // Clearing an entry has to stay possible. AE2 validates the value it is about to store
+            // through this method, and clearing stores an empty stack - refusing empty stacks here is
+            // what made marked entries impossible to remove.
+            return stack.isEmpty()
+                    || (MeSalvagerBlockEntity.hasRequiredRarity(stack) && super.canSetFilterTo(stack));
         }
     }
 }
