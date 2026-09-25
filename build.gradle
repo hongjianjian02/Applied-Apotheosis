@@ -27,6 +27,9 @@ neoForge {
             if (project.hasProperty('clientselftest')) {
                 systemProperty 'applied_apotheosis.clientselftest', 'true'
                 programArguments.addAll '--quickPlaySingleplayer', 'selftest'
+                // The dialog is 250 units tall: at GUI scale 2 the default 854x480 dev window is too
+                // short and AE2 clamps the screen to the top edge, so the screenshot would be cut off.
+                programArguments.addAll '--width', '1100', '--height', '720'
             }
         }
         server {

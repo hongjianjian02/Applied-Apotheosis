@@ -2,7 +2,7 @@
   "includes": ["common/common.json", "common/player_inventory.json"],
   "background": {
     "texture": "applied_apotheosis:textures/guis/me_salvager.png",
-    "srcRect": [0, 0, 176, 223]
+    "srcRect": [0, 0, 176, 250]
   },
   "slots": {
     "CONFIG": {
@@ -12,7 +12,7 @@
     },
     "MACHINE_INPUT": {
       "left": 8,
-      "top": 94,
+      "top": 130,
       "grid": "BREAK_AFTER_9COLS"
     },
     "UPGRADE": {
@@ -46,7 +46,7 @@
       },
       "position": {
         "left": 8,
-        "top": 82
+        "top": 118
       }
     }
   },

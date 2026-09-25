@@ -70,6 +70,13 @@ public final class ClientSelfTest {
         // trying to screenshot.
         minecraft.options.pauseOnLostFocus = false;
 
+        // The dialog is 250 units tall, which does not fit the default 854x480 dev window at GUI
+        // scale 2 (AE2 clamps the screen to the top edge, so the screenshot would be cut off), so
+        // give the window more height for the screenshot pass.
+        if (minecraft.getWindow().getHeight() < 560) {
+            minecraft.getWindow().setWindowed(1100, 720);
+        }
+
         ticks++;
         switch (stage) {
             case 0 -> {
