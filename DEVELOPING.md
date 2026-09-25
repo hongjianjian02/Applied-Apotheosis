@@ -123,9 +123,9 @@ updates.json                               游戏内更新检查用的版本清�
 | 方块朝向（AE2 语义） | 非潜行右键扳手 = 旋转（`WrenchHook` + `allowsPlayerRotation`），潜行右键扳手 = 拆下来 |
 | 哪些物品会被跳过 | `findSalvageableSlot()`：稀有度合格但神化没有拆解配方的（远古装备）直接跳过，不堵住队列 |
 | 稀有度筛选的五档与配色 | `RarityFilter.TIERS`（顺序 = 位掩码位序）/ `FALLBACK_COLORS`；图标直接取 `LootRarity#getMaterial()`（即 神秘废金属~神铸珍珠 那套材料），数据包改了材料会自动跟着变 |
-| 界面里那排图标的位置 | `assets/ae2/screens/me_salvager.json` 的 `rarityFilter` 条目：格子 18×18、间距 0（= 18 的列距，与槽位网格同拍），5 格共 90 px，起点 (80,16)，正好压在第 5~9 列槽位上方、右边缘与 9 格槽位行（8..170）齐平 |
+| 界面里那排图标的位置 | `assets/ae2/screens/me_salvager.json` 的 `rarityFilter` 条目：格子 18×18、间距 0（= 18 的列距，与槽位网格同拍），5 格共 90 px，起点 (80,16)，正好压在第 5~9 列槽位上方、右边缘与 9 格槽位行（8..170）齐平；过滤列表是**两行 18 格**（`FILTER_SLOTS = 18`），第二行在 y=58 |
 | 黑白名单与稀有度的组合规则 | `MeSalvagerBlockEntity.isAllowedByFilter`：**两道独立筛选**——稀有度行（勾了就只拆那几档，空 = 不限制，与模式无关）+ 物品列表（受模式控制：不过滤 / 白名单空列表=不限制 / 黑名单永不拆），物品要都通过 |
-| 输入 / 过滤 / 升级槽数量 | `MeSalvagerBlockEntity.INPUT_SLOTS` / `FILTER_SLOTS` / `UPGRADE_SLOTS`（升级槽由 AE2 的 `UpgradesPanel` 自己定位，实测 176 宽对话框上从 (186,8) 起、竖向排；6 格时向下占到 y≈116，仍在 205 高的面板内） |
+| 输入 / 过滤 / 升级槽数量 | `MeSalvagerBlockEntity.INPUT_SLOTS` / `FILTER_SLOTS` / `UPGRADE_SLOTS`（升级槽由 AE2 的 `UpgradesPanel` 自己定位，实测 176 宽对话框上从 (186,8) 起、竖向排；6 格时向下占到 y≈116，仍在面板内） |
 | 耗电与处理速度 | **配置文件** `idlePower` / `powerPerOperation` / `baseTickRate` / `ticksPerSpeedCard`（见 `AppliedApotheosisConfig`）；周期算法在 `getCycleTicks()` / `getTickingRequest()` |
 | 卡牌上限 | `ModBlocks.MAX_SALVAGE_CARDS` / `MAX_SPEED_CARDS`（各 3 张）；**注意** `MeSalvagerBlockEntity.UPGRADE_SLOTS` 必须 ≥ 两者之和（现在 6），否则"3 分解卡 + 3 加速卡"的满配摆不出来——README 的吞吐表就是这么写错的 |
 | 合成配方 | `src/main/resources/data/applied_apotheosis/recipes/*.json` |
@@ -158,14 +158,14 @@ updates.json                               游戏内更新检查用的版本清�
 - 升级槽的坐标由 AE2 的 `UpgradesPanel` 自己算（176 宽对话框上实测从 **(186,8)** 起、竖排），
   JSON 里 `UPGRADE` 的值只是兜底；挪动或增减升级槽后，贴图 `textures/guis/me_salvager.png` 里烘死的槽位底纹要跟着改。
 - 界面贴图是烘焙式的：槽位底纹（`#8B8B8B` 底、上/左 `#373737`、下/右 `#FFFFFF` 的凹槽）直接画在 `me_salvager.png` 上，
-  AE2 不会另外画槽底。面板尺寸 **176×205**——与 AE2 自己的接口（`ae2:screens/interface.json`）同尺寸。
+  AE2 不会另外画槽底。面板尺寸 **176×223**（比 AE2 自己的接口高 18px，多出来的一行给第二个过滤行；再高就放不进 GUI scale 2 的 240 单位窗口了）。
   面板画法与 AE2 一致：外圈 1 px `#000000` 描边，**四角按 45° 斜切 2 px**（切掉的像素保持透明，所以角是圆的），
   里圈 2 px 斜面（上/左 `#FFFFFF`、下/右 `#555555`），内部 `#C6C6C6`；判断方式是算到四条边的对角距离
   （`x+y`、`W-1-x+y`、`x+H-1-y`、`W-1-x+H-1-y`），小于 2 透明、等于 2 描边。
   生成脚本 `GenGui.java` 按固定坐标把面板和槽位一次画出来（过滤行 y=40、输入行 y=76、物品栏 y=123、快捷栏 y=181），
   挪槽位时改脚本里的坐标 + JSON 里的槽位/标签坐标 + `srcRect` 高度即可；
   物品栏那几行是**按对话框底边对齐**的（`common/player_inventory.json` 用 `bottom`，AC=82/24、标题 93），
-  所以面板高度一变它们自动跟着走，AE2 自己的 205 高界面算出来正好也是 123/181。
+  所以面板高度一变它们自动跟着走，AE2 自己的界面算出来正好也是它自己 include 里的值。
 - **方块贴图走 AE2 机器外壳的调色板**（取样自 `ae2:block/charger_side`、`inscriber`、`energy_acceptor`）：
   壳体 `#B0B0B0`／高光 `#BEBEBE`／阴影 `#8A8A8A`／描边 `#4D4D4D`／凹槽 `#666666`／内嵌 `#393939`、`#2E2E2E`，
   再配本模组的神话橙 `#ED7014`（亮 `#FFB35C`、暗 `#A34A08`）。画法是 16×16 逐像素：外壳一圈描边 + 左上高光/右下阴影、

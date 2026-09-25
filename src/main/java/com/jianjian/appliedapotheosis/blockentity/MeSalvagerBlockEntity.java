@@ -71,7 +71,7 @@ public class MeSalvagerBlockEntity extends AENetworkInvBlockEntity
      */
     public static final int UPGRADE_SLOTS = 6;
     /** Slots holding the blacklist/whitelist entries. */
-    public static final int FILTER_SLOTS = 9;
+    public static final int FILTER_SLOTS = 18;
 
     /** Raw string of the configured minimum rarity, used to detect config changes. */
     private static String cachedMinimumRarityRaw;
